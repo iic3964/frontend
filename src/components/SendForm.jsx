@@ -1,10 +1,65 @@
-import { useState } from "react";
+import { useEffect, useState } from "react";
 import { apiClient } from "../modules/api";
 
 export default function SendForm() {
   const [patientId, setPatientId] = useState("");
   const [residentDoctorId, setResidentDoctorId] = useState("");
   const [supervisorDoctorId, setSupervisorDoctorId] = useState("");
+  const [medics, setMedics] = useState({ resident: [], supervisor: [] });
+  const [medicsLoading, setMedicsLoading] = useState(false);
+  const [medicsError, setMedicsError] = useState(null);
+  const [patients, setPatients] = useState([]);
+  const [patientsLoading, setPatientsLoading] = useState(false);
+  const [patientsError, setPatientsError] = useState(null);
+  useEffect(() => {
+    let mounted = true;
+
+    const loadMedics = async () => {
+      setMedicsLoading(true);
+      setMedicsError(null);
+      try {
+        const resp = await apiClient.getMedics();
+        if (!mounted) return;
+        if (resp.success && resp.data) {
+          setMedics(resp.data);
+        } else {
+          setMedicsError(resp.error || "No se pudieron cargar los médicos");
+        }
+      } catch (err) {
+        if (!mounted) return;
+        setMedicsError(err instanceof Error ? err.message : "Error al cargar médicos");
+      } finally {
+        if (mounted) setMedicsLoading(false);
+      }
+    };
+
+    const loadPatients = async () => {
+      setPatientsLoading(true);
+      setPatientsError(null);
+      try {
+        const resp = await apiClient.getPatients();
+        if (!mounted) return;
+        if (resp.success && resp.data && Array.isArray(resp.data.patients)) {
+          setPatients(resp.data.patients);
+        } else {
+          setPatientsError(resp.error || "No se pudieron cargar los pacientes");
+        }
+      } catch (err) {
+        if (!mounted) return;
+        setPatientsError(err instanceof Error ? err.message : "Error al cargar pacientes");
+      } finally {
+        if (mounted) setPatientsLoading(false);
+      }
+    };
+
+    // load both in parallel
+    loadMedics();
+    loadPatients();
+
+    return () => {
+      mounted = false;
+    };
+  }, []);
   const [diagnostic, setDiagnostic] = useState("");
   const [loading, setLoading] = useState(false);
   const [error, setError] = useState(null);
@@ -47,36 +102,69 @@ export default function SendForm() {
       {/* IDs en una sola línea */}
       <div className="grid gap-4 grid-cols-3">
         <div className="flex flex-col gap-2">
-          <label className="text-sm text-white/70">ID Paciente *</label>
-          <input
+          <label className="text-sm text-white/70">Paciente *</label>
+          <select
             value={patientId}
             onChange={(e) => setPatientId(e.target.value)}
             className="rounded-lg bg-black/40 border border-white/10 px-3 py-2 outline-none focus:ring-2 focus:ring-health-accent"
-            placeholder="ID del paciente"
             required
-          />
+            disabled={patientsLoading}
+          >
+            <option value="">{patientsLoading ? "Cargando pacientes..." : "Selecciona un paciente"}</option>
+            {patients.map((p) => (
+              <option key={p.id} value={p.id}>
+                {`${p.rut ? `${p.rut} — ` : ""}${p.first_name} ${p.last_name}${p.email ? ` — ${p.email}` : ""}`}
+              </option>
+            ))}
+          </select>
         </div>
         <div className="flex flex-col gap-2">
-          <label className="text-sm text-white/70">ID Médico Residente *</label>
-          <input
+          <label className="text-sm text-white/70">Médico Residente *</label>
+          <select
             value={residentDoctorId}
             onChange={(e) => setResidentDoctorId(e.target.value)}
             className="rounded-lg bg-black/40 border border-white/10 px-3 py-2 outline-none focus:ring-2 focus:ring-health-accent"
-            placeholder="ID del médico"
             required
-          />
+            disabled={medicsLoading}
+          >
+            <option value="">{medicsLoading ? "Cargando médicos..." : "Selecciona un médico residente"}</option>
+            {medics.resident.map((d) => (
+              <option key={d.id} value={d.id}>
+                {`${d.first_name} ${d.last_name}${d.email ? ` — ${d.email}` : d.phone ? ` — ${d.phone}` : ""}`}
+              </option>
+            ))}
+          </select>
         </div>
         <div className="flex flex-col gap-2">
-          <label className="text-sm text-white/70">ID Médico Supervisor *</label>
-          <input
+          <label className="text-sm text-white/70">Médico Supervisor *</label>
+          <select
             value={supervisorDoctorId}
             onChange={(e) => setSupervisorDoctorId(e.target.value)}
             className="rounded-lg bg-black/40 border border-white/10 px-3 py-2 outline-none focus:ring-2 focus:ring-health-accent"
-            placeholder="ID del médico"
             required
-          />
+            disabled={medicsLoading}
+          >
+            <option value="">{medicsLoading ? "Cargando médicos..." : "Selecciona un médico supervisor"}</option>
+            {medics.supervisor.map((d) => (
+              <option key={d.id} value={d.id}>
+                {`${d.first_name} ${d.last_name}${d.email ? ` — ${d.email}` : d.phone ? ` — ${d.phone}` : ""}`}
+              </option>
+            ))}
+          </select>
         </div>
       </div>
+
+      {/* Medics fetch error */}
+      {patientsError && (
+        <div className="rounded-lg bg-red-500/20 border border-red-500/50 px-4 py-3 text-red-400">
+          {patientsError}
+        </div>
+      )}
+      {medicsError && (
+        <div className="rounded-lg bg-red-500/20 border border-red-500/50 px-4 py-3 text-red-400">
+          {medicsError}
+        </div>
+      )}
 
       {/* Diagnóstico */}
       <div className="flex flex-col gap-2">

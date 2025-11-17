@@ -44,6 +44,16 @@ export type Doctor = {
   country?: string;
 };
 
+// Doctor object returned by the `GET /get-doctors` endpoint includes an id
+export type DoctorWithId = Doctor & {
+  id: string;
+};
+
+// Patient object returned by list endpoints includes an id
+export type PatientWithId = Patient & {
+  id: string;
+};
+
 export type ClinicalAttention = {
   id: string;
   created_at: string | null;

@@ -1,5 +1,5 @@
 import { API_URL } from "astro:env/client";
-import type { ApiResponse, ClinicalAttention, CreateClinicalAttentionRequest, PaginatedResponse, UpdateClinicalAttentionRequest } from "./types";
+import type { ApiResponse, ClinicalAttention, CreateClinicalAttentionRequest, PaginatedResponse, UpdateClinicalAttentionRequest, DoctorWithId, PatientWithId } from "./types";
 
 type QueryParams = Record<string, string | number | boolean | undefined>;
 
@@ -7,7 +7,7 @@ class ApiClient {
   private baseUrl: string;
 
   constructor() {
-    this.baseUrl = API_URL || "http://localhost:3000/v1";
+    this.baseUrl = API_URL || "http://localhost:8000/v1";
   }
 
   private buildUrl(endpoint: string, params?: QueryParams): string {
@@ -61,6 +61,17 @@ class ApiClient {
         error: error instanceof Error ? error.message : "Unknown error",
       };
     }
+  }
+  // Medics / Doctors
+  // GET /get-doctors returns an object with `resident` and `supervisor` arrays
+  async getMedics(): Promise<ApiResponse<{ resident: DoctorWithId[]; supervisor: DoctorWithId[] }>> {
+    return this.request<{ resident: DoctorWithId[]; supervisor: DoctorWithId[] }>("/get-doctors");
+  }
+
+  // Patients
+  // GET /patients returns an object with `patients` array
+  async getPatients(): Promise<ApiResponse<{ patients: PatientWithId[] }>> {
+    return this.request<{ patients: PatientWithId[] }>("/patients");
   }
 
   // clinical attentions endpoints
