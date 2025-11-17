@@ -61,10 +61,7 @@ class ApiClient {
 
       // Handle empty responses (like DELETE 204 No Content)
       const contentType = response.headers.get("content-type");
-      if (
-        response.status === 204 ||
-        !contentType?.includes("application/json")
-      ) {
+      if (response.status === 204 || !contentType?.includes("application/json")) {
         return { success: true, data: undefined as T };
       }
 
@@ -89,69 +86,34 @@ class ApiClient {
     return this.request<{ patients: PatientWithId[] }>("/patients");
   }
 
-  // Auth endpoints
-
-  async login(payload: LoginPayload): Promise<ApiResponse<LoginResponse>> {
-    return this.request<LoginResponse>("/auth/login", {
-      method: "POST",
-      body: JSON.stringify(payload),
-    });
-  }
-
-  async register(payload: RegisterPayload): Promise<ApiResponse<RegisterResponse>> {
-    // Updated from <any> to <RegisterResponse>
-    return this.request<RegisterResponse>("/auth/register", {
-      method: "POST",
-      body: JSON.stringify(payload),
-    });
-  }
-
   // clinical attentions endpoints
 
-  async getClinicalAttentions(pagination?: {
-    page?: number;
-    page_size?: number;
-  }): Promise<ApiResponse<PaginatedResponse<ClinicalAttention>>> {
-    return this.request<PaginatedResponse<ClinicalAttention>>(
-      "/clinical_attentions",
-      {},
-      pagination
-    );
+  async getClinicalAttentions(
+    pagination?: { page?: number; page_size?: number }
+  ): Promise<ApiResponse<PaginatedResponse<ClinicalAttention>>> {
+    return this.request<PaginatedResponse<ClinicalAttention>>("/clinical_attentions", {}, pagination);
   }
 
-  async createClinicalAttention(
-    clinicalAttention: CreateClinicalAttentionRequest
-  ): Promise<ApiResponse<ClinicalAttention>> {
+  async createClinicalAttention(clinicalAttention: CreateClinicalAttentionRequest): Promise<ApiResponse<ClinicalAttention>> {
     return this.request<ClinicalAttention>("/clinical_attentions", {
       method: "POST",
       body: JSON.stringify(clinicalAttention),
     });
   }
 
-  async getClinicalAttention(
-    id: string
-  ): Promise<ApiResponse<ClinicalAttention>> {
+  async getClinicalAttention(id: string): Promise<ApiResponse<ClinicalAttention>> {
     return this.request<ClinicalAttention>(`/clinical_attentions/${id}`);
   }
 
-  async updateClinicalAttention(
-    id: string,
-    clinicalAttention: UpdateClinicalAttentionRequest
-  ): Promise<ApiResponse<ClinicalAttention>> {
+  async updateClinicalAttention(id: string, clinicalAttention: UpdateClinicalAttentionRequest): Promise<ApiResponse<ClinicalAttention>> {
     return this.request<ClinicalAttention>(`/clinical_attentions/${id}`, {
       method: "PATCH",
       body: JSON.stringify(clinicalAttention),
     });
   }
 
-  async deleteClinicalAttention(
-    id: string,
-    deleted_by_id: string
-  ): Promise<ApiResponse<void>> {
-    return this.request<void>(`/clinical_attentions/${id}`, {
-      method: "DELETE",
-      body: JSON.stringify({ deleted_by_id }),
-    });
+  async deleteClinicalAttention(id: string, deleted_by_id: string): Promise<ApiResponse<void>> {
+    return this.request<void>(`/clinical_attentions/${id}`, { method: "DELETE", body: JSON.stringify({ deleted_by_id }) });
   }
 }
 
