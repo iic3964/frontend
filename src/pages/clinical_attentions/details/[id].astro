@@ -1,0 +1,12 @@
+---
+export const prerender = false;
+import BaseLayout from "../../../layouts/Base.astro";// Ajusta la ruta a tu layout
+import ClinicalAttentionDetail from "../../../components/clinicalAttention/Detail.jsx";// Ajusta la ruta a tu componente
+
+// Astro captura el parámetro de la URL automáticamente
+const { id } = Astro.params;
+---
+
+<BaseLayout title={`Detalle de Atención - ${id}`}>
+  <ClinicalAttentionDetail client:only="react" attentionId={id} />
+</BaseLayout>

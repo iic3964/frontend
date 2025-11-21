@@ -89,6 +89,8 @@ export type UpdateClinicalAttentionRequest = {
 
 // --- Auth Types (Based on FastAPI models) ---
 
+export type UserRole = 'resident' | 'supervisor';
+
 /**
  * Payload for /auth/login
  * Matches FastAPI 'UserAuth'
@@ -119,6 +121,7 @@ export type AuthUser = {
   user_metadata: {
     first_name?: string;
     last_name?: string;
+    role?: UserRole;
     [key: string]: any;
   };
   [key: string]: any;

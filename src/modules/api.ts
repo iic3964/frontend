@@ -104,7 +104,7 @@ class ApiClient {
     return this.request<{
       resident: DoctorWithId[];
       supervisor: DoctorWithId[];
-    }>("/get-doctors");
+    }>("/doctors/get-doctors");
   }
 
   // Patients
