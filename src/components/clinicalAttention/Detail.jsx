@@ -9,6 +9,7 @@ export default function ClinicalAttentionDetail() {
   const [error, setError] = useState(null);
   const [showEditModal, setShowEditModal] = useState(false);
   const [showDeleteModal, setShowDeleteModal] = useState(false);
+  const [polling, setPolling] = useState(false);
 
   const fetchData = async () => {
     const pathname = window.location.pathname;
@@ -26,6 +27,13 @@ export default function ClinicalAttentionDetail() {
 
       if (response.success && response.data) {
         setClinicalAttention(response.data);
+
+        // Activamos polling si la IA aún no responde
+        if (response.data.ai_result === null) {
+          setPolling(true);
+        } else {
+          setPolling(false);
+        }
       } else {
         setError(response.error || "Error al cargar los datos");
       }
@@ -36,9 +44,21 @@ export default function ClinicalAttentionDetail() {
     }
   };
 
+  // Fetch inicial
   useEffect(() => {
     fetchData();
   }, []);
+
+  // Polling cada 5 segundos mientras la IA trabaja
+  useEffect(() => {
+    if (!polling) return;
+
+    const interval = setInterval(() => {
+      fetchData();
+    }, 5000);
+
+    return () => clearInterval(interval);
+  }, [polling]);
 
   const formatDate = (dateString) => {
     if (!dateString) return "N/A";
@@ -77,7 +97,7 @@ export default function ClinicalAttentionDetail() {
   }
 
   const ca = clinicalAttention;
-  const deletor = "392c3fe1-ee87-4bbb-ae46-d2733a84bf8f"; // TODO: get the user id from the session
+  const deletor = "392c3fe1-ee87-4bbb-ae46-d2733a84bf8f"; // TODO: get the user id
 
   return (
     <div className="p-6 flex flex-col gap-6">
@@ -150,6 +170,8 @@ export default function ClinicalAttentionDetail() {
               <span className="text-white/50">Diagnóstico:</span>{" "}
               {ca.diagnostic || "N/A"}
             </li>
+
+            {/* LEY DE URGENCIA */}
             <li>
               <span className="text-white/50">Ley de Urgencia:</span>
               <span
@@ -168,6 +190,8 @@ export default function ClinicalAttentionDetail() {
                   : "Pendiente"}
               </span>
             </li>
+
+            {/* ESTADO IA */}
             <li>
               <span className="text-white/50">Resultado IA:</span>
               <span
@@ -186,10 +210,39 @@ export default function ClinicalAttentionDetail() {
                   : "Pendiente"}
               </span>
             </li>
+
+            {/* LOADER MIENTRAS IA PROCESA */}
+            {ca.ai_result === null && (
+              <li className="flex items-center gap-2 text-white/70 mt-2">
+                <div className="animate-spin h-4 w-4 border-2 border-white/30 border-t-white rounded-full"></div>
+                <span>Procesando diagnóstico con IA...</span>
+              </li>
+            )}
+
+            {/* CONFIDENCE */}
+            <li>
+              <span className="text-white/50">Confianza IA:</span>{" "}
+              {ca.ai_confidence !== null && ca.ai_confidence !== undefined  ? (
+                <span
+                  className={`ml-2 rounded-md px-2 py-0.5 text-xs ${
+                    ca.ai_confidence >= 0.8
+                      ? "bg-green-500/20 text-green-400"
+                      : "bg-yellow-500/20 text-yellow-300"
+                  }`}
+                >
+                  {(ca.ai_confidence * 100).toFixed(0)}%
+                </span>
+              ) : (
+                <span className="ml-2 text-white/40">N/A</span>
+              )}
+            </li>
+
             <li>
               <span className="text-white/50">Razón IA:</span>{" "}
               {ca.ai_reason || "N/A"}
             </li>
+
+            {/* ESTADO */}
             <li>
               <span className="text-white/50">Estado:</span>
               {ca.is_deleted ? (
@@ -198,10 +251,12 @@ export default function ClinicalAttentionDetail() {
                 <span className="ml-2 text-health-ok">Activo</span>
               )}
             </li>
+
             <li>
               <span className="text-white/50">Sobrescrito por:</span>{" "}
               {ca.overwritten_by || "N/A"}
             </li>
+
             {ca.overwritten_reason && (
               <li>
                 <span className="text-white/50">Razón de sobrescritura:</span>{" "}
@@ -211,6 +266,7 @@ export default function ClinicalAttentionDetail() {
           </ul>
         </div>
 
+        {/* MÉDICOS */}
         <div>
           <h2 className="text-lg font-semibold mb-4">Médico Residente</h2>
           <ul className="space-y-2 text-white/80">
@@ -228,7 +284,9 @@ export default function ClinicalAttentionDetail() {
             </li>
           </ul>
 
-          <h2 className="text-lg font-semibold mb-4 mt-6">Médico Supervisor</h2>
+          <h2 className="text-lg font-semibold mb-4 mt-6">
+            Médico Supervisor
+          </h2>
           <ul className="space-y-2 text-white/80">
             <li>
               <span className="text-white/50">Nombre:</span>{" "}
