@@ -1,4 +1,5 @@
 import { useState } from "react";
+import { apiClient } from "../modules/api"; // Make sure this path is correct
 
 /** @param {{ mode: "login" | "register" }} props */
 export default function AuthForm({ mode }) {
@@ -8,38 +9,71 @@ export default function AuthForm({ mode }) {
     email: "",
     password: "",
   });
+  const [error, setError] = useState(null);
+  const [loading, setLoading] = useState(false);
 
   const handleChange = (e) => {
     setForm({ ...form, [e.target.name]: e.target.value });
   };
 
-  const handleSubmit = (e) => {
+  const handleSubmit = async (e) => {
     e.preventDefault();
+    setLoading(true);
+    setError(null);
 
-    if (mode === "register") {
-      localStorage.setItem(
-        "saluia.user",
-        JSON.stringify({
+    let response;
+
+    try {
+      if (mode === "register") {
+        response = await apiClient.register({
           first: form.first,
           last: form.last,
           email: form.email,
-        })
-      );
-      alert("Registro exitoso ✅ Redirigiendo a login...");
-      window.location.href = "/auth/login";
-      return;
-    }
+          password: form.password,
+        });
+      } else {
+        response = await apiClient.login({
+          email: form.email,
+          password: form.password,
+        });
+      }
 
-    if (mode === "login") {
-      const user = JSON.parse(localStorage.getItem("saluia.user")) || {
-        email: form.email,
-        first: "Usuario",
-        last: "",
-      };
+      if (!response.success) {
+        // Error is now handled by the apiClient, including 'detail'
+        throw new Error(response.error || "Ocurrió un error");
+      }
 
-      localStorage.setItem("saluia.session", JSON.stringify(user));
-      alert(`Bienvenido/a ${user.first || "Usuario"} 👋`);
-      window.location.href = "/"; 
+      // Handle successful response
+      const data = response.data;
+
+      if (mode === "register") {
+        alert("Registro exitoso ✅ Revisa tu correo para confirmar la cuenta.");
+        window.location.href = "/auth/login";
+      }
+
+      if (mode === "login") {
+        if (!data || !data.session) {
+          throw new Error(
+            "Respuesta de login inválida. No se encontró la sesión."
+          );
+        }
+
+        // Store the session returned from the backend
+        localStorage.setItem("saluia.session", JSON.stringify(data.session));
+
+        // Use user data from the session
+        const user = data.session?.user;
+        const userName =
+          user?.user_metadata?.first_name || user?.email || "Usuario";
+
+        alert(`Bienvenido/a ${userName} 👋`);
+        window.location.href = "/";
+      }
+    } catch (err) {
+      console.error(err);
+      setError(err.message);
+    } finally {
+      setLoading(false);
     }
   };
 
@@ -101,13 +135,21 @@ export default function AuthForm({ mode }) {
           onChange={handleChange}
           className="w-full rounded-lg bg-black/40 border border-white/10 px-3 py-2 outline-none focus:ring-2 focus:ring-health-accent"
           required
+          minLength={6}
         />
+
+        {error && <p className="text-sm text-red-400 text-center">{error}</p>}
 
         <button
           type="submit"
-          className="w-full rounded-xl bg-health-accent text-black py-2 font-medium hover:bg-health-accent-dark transition"
+          disabled={loading}
+          className="w-full rounded-xl bg-health-accent text-black py-2 font-medium hover:bg-health-accent-dark transition disabled:opacity-50 disabled:cursor-not-allowed"
         >
-          {mode === "login" ? "Entrar" : "Registrarse"}
+          {loading
+            ? "Cargando..."
+            : mode === "login"
+            ? "Entrar"
+            : "Registrarse"}
         </button>
       </form>
 
