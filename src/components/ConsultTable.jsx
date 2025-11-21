@@ -22,7 +22,7 @@ export default function ConsultTable() {
 
         if (response.success && response.data) {
           setClinicalAttentions(response.data.results);
-          console.log(response.data.results);
+        
           setTotal(response.data.total);
         } else {
           setError(response.error || "Error al cargar los datos");
@@ -85,10 +85,9 @@ export default function ConsultTable() {
               <th>RUT</th>
               <th>Médico Residente</th>
               <th>Médico Supervisor</th>
-              {/* Diagnóstico eliminado */}
-              <th>Resultado IA</th>
+              <th>Aprobado Por Medico</th>
               <th>Ley Urgencia</th>
-              <th>Sobrescrito</th>
+              <th>Resultado IA</th>
               <th>Updated At</th>
               <th></th>
             </tr>
@@ -120,24 +119,24 @@ export default function ConsultTable() {
                   {r.supervisor_doctor.first_name}{" "}
                   {r.supervisor_doctor.last_name}
                 </td>
-
-                <td className="px-4 py-3 whitespace-nowrap">
-                  <span
-                    className={`rounded-md px-2 py-1 text-xs ${
-                      r.ai_result === true
-                        ? "bg-health-ok/20 text-health-ok"
-                        : r.ai_result === false
-                        ? "bg-red-500/20 text-red-400"
-                        : "bg-white/10 text-white/70"
-                    }`}
-                  >
-                    {r.ai_result === true
-                      ? "Aprobado"
-                      : r.ai_result === false
-                      ? "Rechazado"
-                      : "Pendiente"}
-                  </span>
-                </td>
+                 <td className="px-4 py-3 whitespace-nowrap">
+                    <span
+                      className={`rounded-md px-2 py-1 text-xs ${
+                        r.medic_approved === true
+                          ? "bg-green-500/20 text-green-400"     // Aprobado
+                          : r.medic_approved === false
+                          ? "bg-red-500/20 text-red-400"         // Rechazado
+                          : "bg-white/10 text-white/70"          // Pendiente (null)
+                      }`}
+                    >
+                      {r.medic_approved === true
+                        ? "Aprobado"
+                        : r.medic_approved === false
+                        ? "Rechazado"
+                        : "Pendiente"}
+                    </span>
+                  </td>
+                
 
                 <td className="px-4 py-3 whitespace-nowrap">
                   <span
@@ -156,16 +155,26 @@ export default function ConsultTable() {
                       : "Pendiente"}
                   </span>
                 </td>
-
                 <td className="px-4 py-3 whitespace-nowrap">
-                  {r.is_deleted ? (
-                    <span className="text-red-400">Eliminado</span>
-                  ) : r.overwritten_by ? (
-                    <span className="text-yellow-400">Sí</span>
-                  ) : (
-                    <span className="text-white/70">No</span>
-                  )}
+                  <span
+                    className={`rounded-md px-2 py-1 text-xs ${
+                      r.ai_result === true
+                        ? "bg-health-ok/20 text-health-ok"
+                        : r.ai_result === false
+                        ? "bg-red-500/20 text-red-400"
+                        : "bg-white/10 text-white/70"
+                    }`}
+                  >
+                    {r.ai_result === true
+                      ? "Aplica"
+                      : r.ai_result === false
+                      ? "No Aplica"
+                      : "Pendiente"}
+                  </span>
                 </td>
+
+               
+
 
                 <td className="px-4 py-3 whitespace-nowrap">
                   {formatDate(r.updated_at)}

@@ -112,6 +112,13 @@ class ApiClient {
     });
   }
 
+  async AproveClinicalAttention(id: string,approved:boolean, reason:string, medic_id: string): Promise<ApiResponse<ClinicalAttention>> {
+    return this.request<ClinicalAttention>(`/clinical_attentions/${id}/medic_approval`, {
+      method: "PATCH",
+      body: JSON.stringify({ approved, reason,  medic_id }),
+    });
+  }
+
   async deleteClinicalAttention(id: string, deleted_by_id: string): Promise<ApiResponse<void>> {
     return this.request<void>(`/clinical_attentions/${id}`, { method: "DELETE", body: JSON.stringify({ deleted_by_id }) });
   }
