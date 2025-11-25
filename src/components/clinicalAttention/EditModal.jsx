@@ -1,4 +1,4 @@
-import { useEffect, useState } from "react";
+import { useEffect, useState, useMemo } from "react";
 import { apiClient } from "../../modules/api";
 
 export default function EditModal({
@@ -20,9 +20,7 @@ export default function EditModal({
   });
   const [hallazgos, setHallazgos] = useState("");
   const [diagnostico, setDiagnostico] = useState("");
-  const [urgencyLaw, setUrgencyLaw] = useState(
-    clinicalAttention?.applies_urgency_law
-  );
+  const [urgencyLaw, setUrgencyLaw] = useState(null);
 
   const [loading, setLoading] = useState(false);
   const [error, setError] = useState(null);
@@ -31,7 +29,17 @@ export default function EditModal({
   // Parse clinical summary
   // -----------------------------
   useEffect(() => {
-    if (!clinicalAttention?.diagnostic) return;
+    if (!clinicalAttention) return;
+    
+    // Reset urgency law based on prop
+    setUrgencyLaw(clinicalAttention.applies_urgency_law);
+
+    if (!clinicalAttention.diagnostic) {
+        setAnamnesis("");
+        setHallazgos("");
+        setDiagnostico("");
+        return;
+    }
 
     const txt = clinicalAttention.diagnostic;
     // Intentamos parsear si tiene formato estructurado
@@ -67,11 +75,13 @@ export default function EditModal({
     } else {
       setDiagnostico(txt);
     }
-  }, [clinicalAttention]);
+  }, [clinicalAttention, isOpen]); // Added isOpen to ensure reset when reopening
 
   // -----------------------------
   // Build summary TXT
   // -----------------------------
+  // Usamos useCallback o simplemente una función pura para evitar problemas de dependencias,
+  // pero dado que se usa en render y submit, la dejamos como función simple.
   const buildTxt = () => {
     const signosTxt = Object.entries(signos)
       .map(([k, v]) => `${k}: ${v}`)
@@ -92,29 +102,49 @@ ${diagnostico}
   };
 
   // -----------------------------
+  // DIRTY CHECK (Validar cambios)
+  // -----------------------------
+  const hasChanges = () => {
+    if (!clinicalAttention) return false;
+    const originalUrgency = clinicalAttention.applies_urgency_law;
+    if (urgencyLaw !== originalUrgency) return true;
+
+    const currentTxt = buildTxt().trim();
+    const originalTxt = (clinicalAttention.diagnostic || "").trim();
+
+    return currentTxt !== originalTxt;
+  };
+
+  const isDirty = hasChanges();
+
+  // -----------------------------
   // Submit
   // -----------------------------
   const handleSubmit = async (e) => {
     e.preventDefault();
+
+    if (!isDirty) {
+      onClose();
+      return;
+    }
+
     setLoading(true);
     setError(null);
 
     const newTxt = buildTxt();
 
     try {
-      // Enviamos diagnóstico estructurado + ley de urgencia + razón
       const response = await apiClient.updateClinicalAttention(
         clinicalAttention.id,
         {
           diagnostic: newTxt,
-          clinical_summary_txt: newTxt, // En caso de que el backend soporte ambos
+          clinical_summary_txt: newTxt,
           applies_urgency_law: urgencyLaw,
         }
       );
 
       if (response.success) {
         onSuccess();
-        onClose();
       } else {
         setError(response.error || "Error al actualizar");
       }
@@ -275,15 +305,21 @@ ${diagnostico}
             <button
               type="button"
               onClick={onClose}
-              className="px-4 py-2 text-sm font-medium text-white/60 hover:text-white transition-colors"
+              className="px-4 py-2 text-sm font-medium text-white/60 hover:text-white transition-colors cursor-pointer"
             >
               Cancelar
             </button>
 
             <button
               type="submit"
-              disabled={loading}
-              className="px-6 py-2 rounded-xl bg-health-accent text-black text-sm font-bold hover:bg-health-accent-dark transition disabled:opacity-50 flex items-center gap-2"
+              disabled={loading || !isDirty}
+              className={`px-6 py-2 rounded-xl text-sm font-bold flex items-center gap-2 transition
+                ${
+                  !isDirty
+                    ? "bg-white/10 text-white/30 cursor-not-allowed"
+                    : "bg-health-accent text-black hover:bg-health-accent-dark cursor-pointer"
+                }
+              `}
             >
               {loading ? "Guardando..." : "Guardar Cambios"}
             </button>
