@@ -184,10 +184,22 @@ export default function ClinicalAttentionDetail({ attentionId }) {
     return () => clearInterval(interval);
   }, [polling]);
 
-  const handleEditSuccess = () => {
+  const handleEditSuccess = async () => {
     setShowEditModal(false);
+
+    try {
+      await apiClient.updateClinicalAttention(clinicalAttention.id, {
+        overwritten_by: null,
+        overwritten_reason: null,
+        medic_approved: null,
+      });
+    } catch (error) {
+      console.error("Failed to reset overwritten fields:", error);
+    }
+
     setIsUpdating(true);
     setShowUpdateSuccessModal(true);
+
     fetchData();
   };
 
