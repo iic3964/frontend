@@ -23,47 +23,66 @@ export default function AuthForm({ mode }) {
     setLoading(true);
     setError(null);
 
-    let response;
-
     try {
       if (mode === "register") {
-        response = await apiClient.register({
+        const regResponse = await apiClient.register({
           first: form.first,
           last: form.last,
           email: form.email,
           password: form.password,
-          role: form.role, // Send role
+          role: form.role,
         });
-      } else {
-        response = await apiClient.login({
+
+        if (!regResponse.success) {
+          throw new Error(regResponse.error || "Error al registrar usuario");
+        }
+
+        const loginResponse = await apiClient.login({
           email: form.email,
           password: form.password,
         });
-      }
 
-      if (!response.success) {
-        throw new Error(response.error || "Ocurrió un error");
-      }
-
-      const data = response.data;
-
-      setSuccess(true);
-
-      if (mode === "register") {
-        setTimeout(() => {
-          window.location.href = "/auth/login";
-        }, 2000);
-      }
-
-      if (mode === "login") {
-        if (!data || !data.session) {
-          throw new Error("Invalid session data.");
+        if (!loginResponse.success) {
+          // Edge case
+          setSuccess(true);
+          setTimeout(() => {
+            window.location.href = "/auth/login";
+          }, 2000);
+          return;
         }
+
+        const data = loginResponse.data;
+        if (data && data.session) {
+          localStorage.setItem("saluia.session", JSON.stringify(data.session));
+          setSuccess(true);
+          setTimeout(() => {
+            window.location.href = "/";
+          }, 1500);
+        }
+
+      } else {
+        // Standard Login Flow
+        const response = await apiClient.login({
+          email: form.email,
+          password: form.password,
+        });
+
+        if (!response.success) {
+          throw new Error(response.error || "Credenciales inválidas");
+        }
+
+        const data = response.data;
+        if (!data || !data.session) {
+          throw new Error("Datos de sesión inválidos.");
+        }
+
         localStorage.setItem("saluia.session", JSON.stringify(data.session));
+        setSuccess(true);
         setTimeout(() => {
           window.location.href = "/";
         }, 1500);
       }
+
     } catch (err) {
       console.error(err);
       setError(err.message);
@@ -107,9 +126,7 @@ export default function AuthForm({ mode }) {
           {mode === "login" ? "¡Bienvenido/a!" : "¡Cuenta creada!"}
         </h2>
         <p className="text-white/60 text-center">
-          {mode === "login"
-            ? "Redirigiendo al dashboard..."
-            : "Redirigiendo al inicio de sesión..."}
+          Redirigiendo al dashboard...
         </p>
       </div>
     );
@@ -135,7 +152,7 @@ export default function AuthForm({ mode }) {
                 placeholder="Nombre"
                 value={form.first}
                 onChange={handleChange}
-                className="w-full rounded-lg bg-black/40 border border-white/10 px-3 py-2 outline-none focus:ring-2 focus:ring-health-accent placeholder:text-white/30 transition-all"
+                className="w-full rounded-lg bg-black/40 border border-white/10 px-3 py-2 outline-none focus:ring-2 focus:ring-health-accent placeholder:text-white/30 transition-all text-white"
                 required
               />
               <input
@@ -143,7 +160,7 @@ export default function AuthForm({ mode }) {
                 placeholder="Apellido"
                 value={form.last}
                 onChange={handleChange}
-                className="w-full rounded-lg bg-black/40 border border-white/10 px-3 py-2 outline-none focus:ring-2 focus:ring-health-accent placeholder:text-white/30 transition-all"
+                className="w-full rounded-lg bg-black/40 border border-white/10 px-3 py-2 outline-none focus:ring-2 focus:ring-health-accent placeholder:text-white/30 transition-all text-white"
                 required
               />
             </div>
@@ -186,7 +203,7 @@ export default function AuthForm({ mode }) {
           placeholder="Correo electrónico"
           value={form.email}
           onChange={handleChange}
-          className="w-full rounded-lg bg-black/40 border border-white/10 px-3 py-2 outline-none focus:ring-2 focus:ring-health-accent placeholder:text-white/30 transition-all"
+          className="w-full rounded-lg bg-black/40 border border-white/10 px-3 py-2 outline-none focus:ring-2 focus:ring-health-accent placeholder:text-white/30 transition-all text-white"
           required
         />
 
@@ -196,7 +213,7 @@ export default function AuthForm({ mode }) {
           placeholder="Contraseña"
           value={form.password}
           onChange={handleChange}
-          className="w-full rounded-lg bg-black/40 border border-white/10 px-3 py-2 outline-none focus:ring-2 focus:ring-health-accent placeholder:text-white/30 transition-all"
+          className="w-full rounded-lg bg-black/40 border border-white/10 px-3 py-2 outline-none focus:ring-2 focus:ring-health-accent placeholder:text-white/30 transition-all text-white"
           required
           minLength={6}
         />

@@ -44,12 +44,16 @@ class ApiClient {
     try {
       const fullEndpoint = this.buildUrl(endpoint, params);
       const url = `${this.baseUrl}${fullEndpoint}`;
+      
+      // Aseguramos headers
+      const headers = {
+        "Content-Type": "application/json",
+        ...options.headers,
+      };
+
       const response = await fetch(url, {
-        headers: {
-          "Content-Type": "application/json",
-          ...options.headers,
-        },
         ...options,
+        headers,
       });
 
       if (!response.ok) {
@@ -97,7 +101,6 @@ class ApiClient {
   }
 
   // Medics / Doctors
-  // GET /get-doctors returns an object with `resident` and `supervisor` arrays
   async getMedics(): Promise<
     ApiResponse<{ resident: DoctorWithId[]; supervisor: DoctorWithId[] }>
   > {
@@ -108,7 +111,6 @@ class ApiClient {
   }
 
   // Patients
-  // GET /patients returns an object with `patients` array
   async getPatients(): Promise<ApiResponse<{ patients: PatientWithId[] }>> {
     return this.request<{ patients: PatientWithId[] }>("/patients/patients");
   }
@@ -148,6 +150,13 @@ class ApiClient {
     return this.request<ClinicalAttention>(`/clinical_attentions/${id}`, {
       method: "PATCH",
       body: JSON.stringify(clinicalAttention),
+    });
+  }
+
+  async AproveClinicalAttention(id: string, approved:boolean, reason:string, medic_id: string): Promise<ApiResponse<ClinicalAttention>> {
+    return this.request<ClinicalAttention>(`/clinical_attentions/${id}/medic_approval`, {
+      method: "PATCH",
+      body: JSON.stringify({ approved, reason,  medic_id }),
     });
   }
 
