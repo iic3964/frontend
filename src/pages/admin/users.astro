@@ -1,0 +1,10 @@
+---
+import BaseLayout from "../../layouts/Base.astro";
+import UserManager from "../../components/admin/UserManager.jsx";
+---
+
+<BaseLayout title="Gestión de Usuarios">
+  <div class="container mx-auto p-6">
+    <UserManager client:only="react" />
+  </div>
+</BaseLayout>

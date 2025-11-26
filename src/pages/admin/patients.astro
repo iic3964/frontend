@@ -1,0 +1,10 @@
+---
+import BaseLayout from "../../layouts/Base.astro";
+import PatientManager from "../../components/admin/PatientManager.jsx";
+---
+
+<BaseLayout title="Gestión de Pacientes">
+  <div class="container mx-auto p-6">
+    <PatientManager client:only="react" />
+  </div>
+</BaseLayout>

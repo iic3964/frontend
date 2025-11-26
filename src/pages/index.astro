@@ -4,9 +4,24 @@ import BaseLayout from "../layouts/Base.astro";
 ---
 
 <script is:inline>
-  const session = localStorage.getItem("saluia.session");
-  if (!session) {
+  const sessionStr = localStorage.getItem("saluia.session");
+  if (!sessionStr) {
     window.location.href = "/auth/login";
+  } else {
+    try {
+      const session = JSON.parse(sessionStr);
+      const role = session.user?.user_metadata?.role;
+
+      document.addEventListener("DOMContentLoaded", () => {
+        const adminBlock = document.getElementById("admin-actions");
+        
+        if (role === "admin" && adminBlock) {
+          adminBlock.classList.remove("hidden");
+        }
+      });
+    } catch (e) {
+      console.error("Error parsing session", e);
+    }
   }
 </script>
 
@@ -17,6 +32,8 @@ import BaseLayout from "../layouts/Base.astro";
       <p class="text-white/70 max-w-prose">
         Simulador de activación de Ley de Urgencia. Selecciona una opción:
       </p>
+
+      {/* Standard Actions (Fila 1) */}
       <div class="mt-2 grid gap-4 sm:grid-cols-2 w-full max-w-lg">
         <a
           href="/clinical_attentions"
@@ -29,6 +46,25 @@ import BaseLayout from "../layouts/Base.astro";
           class="rounded-2xl bg-white/10 text-white py-5 text-lg font-medium text-center transition hover:bg-white/20"
         >
           Enviar
+        </a>
+      </div>
+
+      {/* Admin Actions (Fila 2) - Oculto por defecto, mismo Grid */}
+      <div
+        id="admin-actions"
+        class="hidden mt-4 grid gap-4 sm:grid-cols-2 w-full max-w-lg"
+      >
+        <a
+          href="/admin/patients"
+          class="rounded-2xl bg-blue-600 text-white py-5 text-lg font-medium text-center transition hover:bg-blue-700 shadow-lg border border-blue-400/30"
+        >
+          Ver Pacientes
+        </a>
+        <a
+          href="/admin/users"
+          class="rounded-2xl bg-purple-600 text-white py-5 text-lg font-medium text-center transition hover:bg-purple-700 shadow-lg border border-purple-400/30"
+        >
+          Ver Usuarios
         </a>
       </div>
     </div>
