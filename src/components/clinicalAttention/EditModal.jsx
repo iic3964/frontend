@@ -20,7 +20,6 @@ export default function EditModal({
   });
   const [hallazgos, setHallazgos] = useState("");
   const [diagnostico, setDiagnostico] = useState("");
-  const [urgencyLaw, setUrgencyLaw] = useState(null);
 
   const [loading, setLoading] = useState(false);
   const [error, setError] = useState(null);
@@ -30,15 +29,12 @@ export default function EditModal({
   // -----------------------------
   useEffect(() => {
     if (!clinicalAttention) return;
-    
-    // Reset urgency law based on prop
-    setUrgencyLaw(clinicalAttention.applies_urgency_law);
 
     if (!clinicalAttention.diagnostic) {
-        setAnamnesis("");
-        setHallazgos("");
-        setDiagnostico("");
-        return;
+      setAnamnesis("");
+      setHallazgos("");
+      setDiagnostico("");
+      return;
     }
 
     const txt = clinicalAttention.diagnostic;
@@ -107,7 +103,6 @@ ${diagnostico}
   const hasChanges = () => {
     if (!clinicalAttention) return false;
     const originalUrgency = clinicalAttention.applies_urgency_law;
-    if (urgencyLaw !== originalUrgency) return true;
 
     const currentTxt = buildTxt().trim();
     const originalTxt = (clinicalAttention.diagnostic || "").trim();
@@ -139,7 +134,6 @@ ${diagnostico}
         {
           diagnostic: newTxt,
           clinical_summary_txt: newTxt,
-          applies_urgency_law: urgencyLaw,
         }
       );
 
@@ -248,51 +242,6 @@ ${diagnostico}
           </div>
 
           <hr className="border-white/10" />
-
-          {/* --- SECCIÓN 2: DATOS ADMINISTRATIVOS (MAIN) --- */}
-
-          <div className="grid md:grid-cols-2 gap-6">
-            {/* Ley de Urgencia */}
-            <div>
-              <label className="block text-sm font-medium text-white/70 mb-2">
-                ¿Aplica Ley de Urgencia?
-              </label>
-              <div className="flex gap-2">
-                {[
-                  {
-                    label: "Sí",
-                    value: true,
-                    activeClass:
-                      "bg-health-ok/20 text-health-ok border-health-ok/50",
-                  },
-                  {
-                    label: "No",
-                    value: false,
-                    activeClass: "bg-red-500/20 text-red-400 border-red-500/50",
-                  },
-                  {
-                    label: "Pendiente",
-                    value: null,
-                    activeClass: "bg-white/10 text-white border-white/30",
-                  },
-                ].map((option) => (
-                  <button
-                    key={option.label}
-                    type="button"
-                    onClick={() => setUrgencyLaw(option.value)}
-                    className={`flex-1 py-2 rounded-lg border text-sm font-medium transition-all ${
-                      urgencyLaw === option.value
-                        ? option.activeClass +
-                          " ring-1 ring-offset-1 ring-offset-black ring-white/20"
-                        : "bg-transparent border-white/10 text-white/40 hover:bg-white/5"
-                    }`}
-                  >
-                    {option.label}
-                  </button>
-                ))}
-              </div>
-            </div>
-          </div>
 
           {error && (
             <div className="p-3 rounded-lg bg-red-500/10 border border-red-500/20 text-red-400 text-sm text-center">
