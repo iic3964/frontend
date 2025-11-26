@@ -5,18 +5,15 @@ export default function Header() {
   const [showLogoutModal, setShowLogoutModal] = useState(false);
 
   useEffect(() => {
-    // Check if session exists in localStorage on mount
     const session = localStorage.getItem("saluia.session");
     setIsAuthenticated(!!session);
   }, []);
 
   const handleLogout = () => {
     localStorage.removeItem("saluia.session");
-    // Optional: Remove other keys if necessary
     window.location.href = "/auth/login";
   };
 
-  // If not authenticated, do not render anything
   if (!isAuthenticated) return null;
 
   return (
@@ -25,11 +22,22 @@ export default function Header() {
         <div className="mx-auto w-full xl:max-w-6xl px-4 py-4 flex items-center gap-3">
           <img src="/health.svg" alt="SaluIA" className="w-7 h-7" />
           <h1 className="font-semibold tracking-wide">SaluIA</h1>
-          
+
           <nav className="ml-auto flex gap-4 text-sm">
-            <a href="/" className="hover:text-health-accent transition-colors">
+            <a
+              href="/"
+              className="hover:text-health-accent transition-colors"
+            >
               Inicio
             </a>
+
+            <a
+              href="/aseguradora"
+              className="hover:text-health-accent transition-colors"
+            >
+              Aseguradoras
+            </a>
+
             <button
               onClick={() => setShowLogoutModal(true)}
               className="hover:text-red-400 transition-colors text-left cursor-pointer"
@@ -50,7 +58,7 @@ export default function Header() {
             <p className="text-white/60 text-sm mb-6">
               Serás redirigido al inicio de sesión.
             </p>
-            
+
             <div className="flex gap-3 justify-end">
               <button
                 onClick={() => setShowLogoutModal(false)}
@@ -58,6 +66,7 @@ export default function Header() {
               >
                 Cancelar
               </button>
+
               <button
                 onClick={handleLogout}
                 className="px-4 py-2 text-sm font-medium bg-red-500/10 text-red-400 border border-red-500/20 rounded-lg hover:bg-red-500 hover:text-white transition-all"

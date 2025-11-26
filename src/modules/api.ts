@@ -4,6 +4,7 @@ import type {
   ClinicalAttention,
   CreateClinicalAttentionRequest,
   DoctorWithId,
+  InsuranceCompany,
   LoginPayload,
   LoginResponse,
   PaginatedResponse,
@@ -11,6 +12,8 @@ import type {
   RegisterPayload,
   RegisterResponse,
   UpdateClinicalAttentionRequest,
+  CreateInsuranceCompanyRequest,
+  UpdateInsuranceCompanyRequest,
 } from "./types";
 
 type QueryParams = Record<string, string | number | boolean | undefined>;
@@ -169,6 +172,58 @@ class ApiClient {
       body: JSON.stringify({ deleted_by_id }),
     });
   }
+
+  // ================================
+  // Insurance Companies CRUD
+  // ================================
+
+  async getInsuranceCompanies(params?: {
+    page?: number;
+    page_size?: number;
+    search?: string;
+    order?: string;
+  }): Promise<ApiResponse<PaginatedResponse<InsuranceCompany>>> {
+    console.log("Fetching insurance companies with params:", params);
+    return this.request<PaginatedResponse<InsuranceCompany>>(
+      "/insurance_companies",
+      {},
+      params
+    );
+  }
+
+  async getInsuranceCompany(
+    id: number
+  ): Promise<ApiResponse<InsuranceCompany>> {
+    return this.request<InsuranceCompany>(`/insurance_companies/${id}`);
+  }
+
+  async createInsuranceCompany(
+    payload: CreateInsuranceCompanyRequest
+  ): Promise<ApiResponse<InsuranceCompany>> {
+    return this.request<InsuranceCompany>("/insurance_companies", {
+      method: "POST",
+      body: JSON.stringify(payload),
+    });
+  }
+
+  async updateInsuranceCompany(
+    id: number,
+    payload: UpdateInsuranceCompanyRequest
+  ): Promise<ApiResponse<InsuranceCompany>> {
+    return this.request<InsuranceCompany>(`/insurance_companies/${id}`, {
+      method: "PATCH",
+      body: JSON.stringify(payload),
+    });
+  }
+
+  async deleteInsuranceCompany(
+    id: number
+  ): Promise<ApiResponse<void>> {
+    return this.request<void>(`/insurance_companies/${id}`, {
+      method: "DELETE",
+    });
+  }
 }
+
 
 export const apiClient = new ApiClient();

@@ -1,0 +1,17 @@
+---
+export const prerender = false;
+
+import BaseLayout from "../../../layouts/Base.astro";
+import Card from "../../../components/UI/Card.astro";
+import InsuranceCompanyDetails from "../../../components/insurance_company/InsuranceCompanyDetails.jsx";
+
+const { id } = Astro.params;
+---
+
+<BaseLayout title="Detalle de Aseguradora — SaluIA">
+  <Card>
+    <div class="p-6 md:p-8">
+      <InsuranceCompanyDetails id={id} client:load />
+    </div>
+  </Card>
+</BaseLayout>
