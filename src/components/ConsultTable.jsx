@@ -146,8 +146,9 @@ export default function ConsultTable() {
                   </td>
 
                   <td className="px-4 py-3 whitespace-nowrap">
-                    {r.id || "N/A"}
+                    {r.id_episodio ? r.id_episodio : r.id}
                   </td>
+
 
                   <td className="px-4 py-3 whitespace-nowrap">
                     {r.patient.first_name} {r.patient.last_name}

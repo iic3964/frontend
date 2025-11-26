@@ -23,12 +23,14 @@ export default function EditModal({
 
   const [loading, setLoading] = useState(false);
   const [error, setError] = useState(null);
+  const [idEpisode, setIdEpisode] = useState("");
 
   // -----------------------------
   // Parse clinical summary
   // -----------------------------
   useEffect(() => {
     if (!clinicalAttention) return;
+      setIdEpisode(clinicalAttention.id_episodio || "");
 
     if (!clinicalAttention.diagnostic) {
       setAnamnesis("");
@@ -107,7 +109,7 @@ ${diagnostico}
     const currentTxt = buildTxt().trim();
     const originalTxt = (clinicalAttention.diagnostic || "").trim();
 
-    return currentTxt !== originalTxt;
+    return currentTxt !== originalTxt || idEpisode !== (clinicalAttention.id_episodio || "");
   };
 
   const isDirty = hasChanges();
@@ -134,6 +136,7 @@ ${diagnostico}
         {
           diagnostic: newTxt,
           clinical_summary_txt: newTxt,
+          id_episodio: idEpisode
         }
       );
 
@@ -169,6 +172,7 @@ ${diagnostico}
           <h2 className="text-lg font-semibold text-white tracking-wide">
             Editar Atención Clínica
           </h2>
+          
           <button
             onClick={onClose}
             className="text-white/50 hover:text-white transition"
@@ -178,7 +182,21 @@ ${diagnostico}
         </div>
 
         <form onSubmit={handleSubmit} className="p-6 space-y-6 overflow-y-auto">
-          {/* --- SECCIÓN 1: DATOS CLÍNICOS (HEAD) --- */}
+          {/* ID EPISODIO */}
+<div>
+  <label className="block text-sm font-medium text-white/70 mb-2">
+    ID Episodio
+  </label>
+  <input
+    value={idEpisode}
+    onChange={(e) => setIdEpisode(e.target.value)}
+    className="w-full bg-[#0f1220] border border-white/10 rounded-lg px-4 py-2 text-white focus:ring-2 focus:ring-health-accent outline-none transition-all shadow-inner"
+  />
+  <p className="text-xs text-white/40 mt-1">
+  </p>
+</div>
+
+
 
           {/* ANAMNESIS */}
           <div>

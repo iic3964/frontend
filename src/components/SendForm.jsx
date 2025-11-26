@@ -9,6 +9,7 @@ export default function SendForm() {
   const [medics, setMedics] = useState({ resident: [], supervisor: [] });
   const [medicsLoading, setMedicsLoading] = useState(false);
   const [medicsError, setMedicsError] = useState(null);
+  const [idEpisodio, setIdEpisodio] = useState("");
 
   const [patients, setPatients] = useState([]);
   const [patientsLoading, setPatientsLoading] = useState(false);
@@ -128,6 +129,7 @@ ${diagnosticoPresuntivo || "No registrado"}
         resident_doctor_id: residentDoctorId,
         supervisor_doctor_id: supervisorDoctorId,
         diagnostic:clinicalTxt
+        ,id_episodio: idEpisodio
       });
 
       if (response.success && response.data) {
@@ -154,7 +156,18 @@ ${diagnosticoPresuntivo || "No registrado"}
 
   return (
     <form onSubmit={handleSubmit} className="space-y-5">
-
+      <div className="flex flex-col gap-2">
+        <label className="text-sm text-white/70">ID Episodio (opcional)</label>
+        <input
+          type="text"
+          value={idEpisodio}
+          onChange={(e) => setIdEpisodio(e.target.value)}
+          placeholder=""
+          className="rounded-lg bg-black/40 border border-white/10 px-3 py-2"
+        />
+        <p className="text-xs text-white/40">
+        </p>
+      </div>
       {/* IDs */}
       <div className="grid gap-4 grid-cols-3">
         {/* Paciente */}
