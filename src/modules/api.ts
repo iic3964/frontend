@@ -149,7 +149,7 @@ class ApiClient {
   async createPatient(
     payload: CreatePatientRequest
   ): Promise<ApiResponse<PatientWithId>> {
-    return this.request<PatientWithId>("/patients", {
+    return this.request<PatientWithId>("/patients/patients", {
       method: "POST",
       body: JSON.stringify(payload),
     });
@@ -160,7 +160,7 @@ class ApiClient {
     id: string,
     payload: UpdatePatientRequest
   ): Promise<ApiResponse<PatientWithId>> {
-    return this.request<PatientWithId>(`/patients/${id}`, {
+    return this.request<PatientWithId>(`/patients/patients/${id}`, {
       method: "PATCH",
       body: JSON.stringify(payload),
     });
