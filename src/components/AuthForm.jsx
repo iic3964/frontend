@@ -176,6 +176,7 @@ export default function AuthForm({ mode }) {
               >
                 <option value="resident">Médico Residente</option>
                 <option value="supervisor">Médico Jefe</option>
+                <option value="admin">Jefe de Servicio</option>
               </select>
               {/* Custom Arrow Icon for Select */}
               <div className="pointer-events-none absolute inset-y-0 right-0 flex items-center px-3 text-white/50">
