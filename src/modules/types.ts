@@ -153,3 +153,22 @@ export type RegisterResponse = {
 export type LoginResponse = {
   session: AuthSession;
 };
+
+export interface InsuranceCompany {
+  id: number;
+  nombre_comercial: string | null;
+  nombre_juridico: string;
+  rut: string | null;
+}
+
+export interface CreateInsuranceCompanyRequest {
+  nombre_comercial?: string | null;
+  nombre_juridico: string;
+  rut?: string | null;
+}
+
+export interface UpdateInsuranceCompanyRequest {
+  nombre_comercial?: string | null;
+  nombre_juridico?: string | null;
+  rut?: string | null;
+}

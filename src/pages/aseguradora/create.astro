@@ -1,0 +1,13 @@
+---
+import BaseLayout from "../../layouts/Base.astro";
+import Card from "../../components/UI/Card.astro";
+import CreateInsuranceCompany from "../../components/insurance_company/CreateInsuranceCompany.jsx";
+---
+
+<BaseLayout title="Crear Aseguradora — SaluIA">
+  <Card>
+    <div class="p-6 md:p-8">
+      <CreateInsuranceCompany client:load />
+    </div>
+  </Card>
+</BaseLayout>

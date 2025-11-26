@@ -1,0 +1,24 @@
+---
+import BaseLayout from "../../layouts/Base.astro";
+import Card from "../../components/UI/Card.astro";
+import InsuranceCompanyTable from "../../components/insurance_company/InsuranceCompanyTable.jsx";
+---
+
+<BaseLayout title="Aseguradoras — SaluIA">
+  <Card>
+    <div class="p-6 md:p-8 space-y-6">
+      <div class="flex items-center justify-between">
+        <h2 class="text-xl font-semibold">Aseguradoras registradas</h2>
+
+        <a
+          href="/aseguradora/create"
+          class="rounded-lg px-4 py-2 bg-health-accent text-black font-medium shadow-lg shadow-health-accent/10 hover:bg-health-accent-dark transition"
+        >
+          + Nueva Aseguradora
+        </a>
+      </div>
+
+      <InsuranceCompanyTable client:load />
+    </div>
+  </Card>
+</BaseLayout>
