@@ -283,7 +283,6 @@ export default function ClinicalAttentionDetail({ attentionId }) {
 
   const ca = clinicalAttention;
   const parsed = parseClinicalSummary(ca.diagnostic);
-
   const userRole = currentUser?.user_metadata?.role;
   const userId = currentUser?.id;
   const isOwner = ca.resident_doctor?.id === userId;
@@ -314,6 +313,12 @@ export default function ClinicalAttentionDetail({ attentionId }) {
           </svg>
           Volver a lista
         </a>
+        <div className="text-white/60 text-sm font-mono bg-white/5 px-3 py-1 rounded-md border border-white/10">
+          ID Episodio:{" "}
+          <span className="text-health-accent font-semibold">
+            {clinicalAttention?.id_episodio || clinicalAttention?.id}
+          </span>
+        </div>
 
         {canEdit && (
           <div className="flex gap-3">
