@@ -1,7 +1,6 @@
 ---
 import BaseLayout from "../../layouts/Base.astro";
-import Card from "../../components/UI/Card.astro";
-import CreateInsuranceCompany from "../../components/insurance_company/CreateInsuranceCompany.jsx";
+import UserManager from "../../components/admin/UserManager.jsx";
 ---
 
 <script is:inline>
@@ -28,10 +27,8 @@ import CreateInsuranceCompany from "../../components/insurance_company/CreateIns
   })();
 </script>
 
-<BaseLayout title="Crear Aseguradora — SaluIA">
-  <Card>
-    <div class="p-6 md:p-8">
-      <CreateInsuranceCompany client:load />
-    </div>
-  </Card>
+<BaseLayout title="Gestión de Usuarios">
+  <div class="container mx-auto p-6">
+    <UserManager client:only="react" />
+  </div>
 </BaseLayout>

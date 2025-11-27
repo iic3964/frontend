@@ -9,6 +9,11 @@ import type {
   LoginResponse,
   PaginatedResponse,
   PatientWithId,
+  CreatePatientRequest,
+  UpdatePatientRequest,
+  CreateUserRequest,
+  UpdateUserRequest,
+  UserWithRole,
   RegisterPayload,
   RegisterResponse,
   UpdateClinicalAttentionRequest,
@@ -47,7 +52,7 @@ class ApiClient {
     try {
       const fullEndpoint = this.buildUrl(endpoint, params);
       const url = `${this.baseUrl}${fullEndpoint}`;
-      
+
       // Aseguramos headers
       const headers = {
         "Content-Type": "application/json",
@@ -93,13 +98,20 @@ class ApiClient {
     });
   }
 
-  async register(
-    payload: RegisterPayload
+  async registerUser(
+    payload: CreateUserRequest
   ): Promise<ApiResponse<RegisterResponse>> {
-    // Updated from <any> to <RegisterResponse>
+    const body = {
+      email: payload.email,
+      password: payload.password,
+      first: payload.first_name,
+      last: payload.last_name,
+      role: payload.role,
+    };
+
     return this.request<RegisterResponse>("/auth/register", {
       method: "POST",
-      body: JSON.stringify(payload),
+      body: JSON.stringify(body),
     });
   }
 
@@ -113,9 +125,45 @@ class ApiClient {
     }>("/doctors/get-doctors");
   }
 
+  async updateDoctor(
+    id: string,
+    payload: UpdateUserRequest
+  ): Promise<ApiResponse<UserWithRole>> {
+    return this.request<UserWithRole>(`/doctors/${id}`, {
+      method: "PATCH",
+      body: JSON.stringify(payload),
+    });
+  }
+
   // Patients
   async getPatients(): Promise<ApiResponse<{ patients: PatientWithId[] }>> {
     return this.request<{ patients: PatientWithId[] }>("/patients/patients");
+  }
+
+  // Obtener uno por ID
+  async getPatient(id: string): Promise<ApiResponse<PatientWithId>> {
+    return this.request<PatientWithId>(`/patients/${id}`);
+  }
+
+  // Crear
+  async createPatient(
+    payload: CreatePatientRequest
+  ): Promise<ApiResponse<PatientWithId>> {
+    return this.request<PatientWithId>("/patients/patients", {
+      method: "POST",
+      body: JSON.stringify(payload),
+    });
+  }
+
+  // Actualizar
+  async updatePatient(
+    id: string,
+    payload: UpdatePatientRequest
+  ): Promise<ApiResponse<PatientWithId>> {
+    return this.request<PatientWithId>(`/patients/patients/${id}`, {
+      method: "PATCH",
+      body: JSON.stringify(payload),
+    });
   }
 
   // clinical attentions endpoints
@@ -156,11 +204,19 @@ class ApiClient {
     });
   }
 
-  async AproveClinicalAttention(id: string, approved:boolean, reason:string, medic_id: string): Promise<ApiResponse<ClinicalAttention>> {
-    return this.request<ClinicalAttention>(`/clinical_attentions/${id}/medic_approval`, {
-      method: "PATCH",
-      body: JSON.stringify({ approved, reason,  medic_id }),
-    });
+  async AproveClinicalAttention(
+    id: string,
+    approved: boolean,
+    reason: string,
+    medic_id: string
+  ): Promise<ApiResponse<ClinicalAttention>> {
+    return this.request<ClinicalAttention>(
+      `/clinical_attentions/${id}/medic_approval`,
+      {
+        method: "PATCH",
+        body: JSON.stringify({ approved, reason, medic_id }),
+      }
+    );
   }
 
   async deleteClinicalAttention(
@@ -216,14 +272,11 @@ class ApiClient {
     });
   }
 
-  async deleteInsuranceCompany(
-    id: number
-  ): Promise<ApiResponse<void>> {
+  async deleteInsuranceCompany(id: number): Promise<ApiResponse<void>> {
     return this.request<void>(`/insurance_companies/${id}`, {
       method: "DELETE",
     });
   }
 }
-
 
 export const apiClient = new ApiClient();

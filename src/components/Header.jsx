@@ -3,10 +3,22 @@ import { useState, useEffect } from "react";
 export default function Header() {
   const [isAuthenticated, setIsAuthenticated] = useState(false);
   const [showLogoutModal, setShowLogoutModal] = useState(false);
+  const [userRole, setUserRole] = useState(null);
 
   useEffect(() => {
-    const session = localStorage.getItem("saluia.session");
-    setIsAuthenticated(!!session);
+    const sessionStr = localStorage.getItem("saluia.session");
+    if (sessionStr) {
+      setIsAuthenticated(!!sessionStr);
+      try {
+        const parsedSession = JSON.parse(sessionStr);
+        setUserRole(parsedSession.user?.user_metadata?.role || null);
+      } catch (e) {
+        console.error("Error parsing session", e);
+        setUserRole(null);
+      }
+    } else {
+      setUserRole(null);
+    }
   }, []);
 
   const handleLogout = () => {
@@ -30,14 +42,14 @@ export default function Header() {
             >
               Inicio
             </a>
-
+            {userRole === "admin" && (
             <a
               href="/aseguradora"
               className="hover:text-health-accent transition-colors"
             >
               Aseguradoras
             </a>
-
+            )}
             <button
               onClick={() => setShowLogoutModal(true)}
               className="hover:text-red-400 transition-colors text-left cursor-pointer"
