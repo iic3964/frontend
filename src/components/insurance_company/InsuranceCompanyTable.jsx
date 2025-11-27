@@ -1,6 +1,6 @@
 import { useEffect, useState } from "react";
 import { apiClient } from "../../modules/api";
-
+import AutocompleteSelect from "../admin/AutocompleteSelect";
 export default function InsuranceCompanyTable() {
   const [companies, setCompanies] = useState([]);
   const [total, setTotal] = useState(0);
@@ -8,7 +8,36 @@ export default function InsuranceCompanyTable() {
   const [pageSize, setPageSize] = useState(10);
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState(null);
-    console.log("Rendering InsuranceCompanyTable");
+    // Estados para la subida de Excel
+  const [selectedCompany, setSelectedCompany] = useState(null);
+  const [excelFile, setExcelFile] = useState(null);
+  const [uploadMessage, setUploadMessage] = useState(null);
+  const [uploadError, setUploadError] = useState(null);
+
+
+  const handleExcelUpload = async () => {
+    setUploadMessage(null);
+    setUploadError(null);
+
+    if (!selectedCompany) {
+      setUploadError("Selecciona una aseguradora.");
+      return;
+    }
+
+    if (!excelFile) {
+      setUploadError("Selecciona un archivo Excel (.xlsx).");
+      return;
+    }
+
+    const resp = await apiClient.uploadInsuranceExcel(selectedCompany, excelFile);
+
+    if (resp.success && resp.data) {
+      setUploadMessage(`Archivo procesado correctamente. Registros afectados: ${resp.data.updated}.`);
+    } else {
+      setUploadError(resp.error || "Error al procesar archivo.");
+    }
+  };
+
   useEffect(() => {
     const load = async () => {
       setLoading(true);
@@ -52,6 +81,68 @@ export default function InsuranceCompanyTable() {
 
   return (
     <div className="space-y-4">
+            {/* SUBIR EXCEL DE ASEGURADORA */}
+      {/* SUBIR EXCEL DE ASEGURADORA */}
+<div className="flex flex-col md:flex-row gap-4 items-center md:items-end">
+
+  {/* Selector Autocomplete */}
+  <div className="flex flex-col w-full md:w-1/3">
+    <label className="text-white/70 text-sm mb-1">Aseguradora</label>
+
+    <AutocompleteSelect
+      value={selectedCompany}
+      onChange={(id) => setSelectedCompany(id)}
+      options={companies}
+      placeholder="Seleccione aseguradora…"
+    />
+  </div>
+
+  {/* INPUT FILE custom */}
+  <div className="flex flex-col w-full md:w-1/3">
+    <label className="text-white/70 text-sm mb-1">Archivo Excel (.xlsx)</label>
+
+    <label className="
+      cursor-pointer
+      bg-white/10 hover:bg-white/20
+      border border-white/10
+      rounded-lg
+      px-4 py-2
+      text-white/90
+      text-sm
+      flex items-center justify-between
+    ">
+      <span>{excelFile ? excelFile.name : "Elegir archivo..."}</span>
+      <span className="text-health-accent font-bold">📎</span>
+      <input
+        type="file"
+        className="hidden"
+        accept=".xlsx"
+        onChange={(e) => setExcelFile(e.target.files?.[0] ?? null)}
+      />
+    </label>
+  </div>
+
+  {/* Botón subir */}
+  <button
+    onClick={handleExcelUpload}
+    className="
+      bg-health-accent 
+      text-black 
+      font-semibold 
+      rounded-lg 
+      px-5 py-2
+      hover:brightness-110
+      transition
+      shadow-md
+      w-full md:w-auto
+    "
+  >
+    ⬆️ Subir Excel
+  </button>
+</div>
+
+
+
       <div className="overflow-x-auto rounded-2xl border border-white/10">
         <table className="w-full text-sm">
           <thead className="bg-black/30">

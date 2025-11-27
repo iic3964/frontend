@@ -278,6 +278,38 @@ class ApiClient {
       method: "DELETE",
     });
   }
+    async uploadInsuranceExcel(
+    insurance_company_id: number,
+    file: File
+  ): Promise<ApiResponse<{ updated: number }>> {
+    const formData = new FormData();
+    formData.append("file", file);
+
+    const url = `${this.baseUrl}/clinical_attentions/import_insurance_excel?insurance_company_id=${insurance_company_id}`;
+
+    try {
+      const response = await fetch(url, {
+        method: "POST",
+        body: formData, // NO agregar Content-Type manualmente
+      });
+
+      if (!response.ok) {
+        return {
+          success: false,
+          error: `HTTP ${response.status}: ${response.statusText}`,
+        };
+      }
+
+      const data = await response.json();
+      return { success: true, data };
+    } catch (e) {
+      return {
+        success: false,
+        error: e instanceof Error ? e.message : "Unknown error",
+      };
+    }
+  }
+
 }
 
 export const apiClient = new ApiClient();
