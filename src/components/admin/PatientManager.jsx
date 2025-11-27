@@ -1,9 +1,10 @@
 import React, { useState, useEffect } from "react";
 import { apiClient } from "../../modules/api";
-
+import AutocompleteSelect from "../admin/AutocompleteSelect";
 const PatientManager = () => {
   const [view, setView] = useState("list"); // 'list', 'create', 'edit', 'episode'
   const [patients, setPatients] = useState([]);
+  const [insuranceCompanies, setInsuranceCompanies] = useState([]);
   const [loading, setLoading] = useState(false);
   const [error, setError] = useState(null);
   const [selectedPatient, setSelectedPatient] = useState(null);
@@ -19,12 +20,25 @@ const PatientManager = () => {
     sex: "",
     height: "",
     weight: "",
-    aseguradora: "",
+    insurance_company_id: "",
   });
 
   useEffect(() => {
     loadPatients();
+    loadInsuranceCompanies();
   }, []);
+
+  const loadInsuranceCompanies = async () => {
+    try {
+      const resp = await apiClient.getInsuranceCompanies({ page_size: 200 });
+      if (resp.success) {
+        const items = resp.data.items || resp.data.results || [];
+        setInsuranceCompanies(items);
+      }
+    } catch (err) {
+      console.error("Error loading insurance companies:", err);
+    }
+  };
 
   const loadPatients = async () => {
     setLoading(true);
@@ -56,7 +70,7 @@ const PatientManager = () => {
       sex: patient.sex || "",
       height: patient.height || "",
       weight: patient.weight || "",
-      aseguradora: patient.aseguradora || "",
+      insurance_company_id: patient.insurance_company?.id || "",
     });
     setView("edit");
   };
@@ -72,18 +86,17 @@ const PatientManager = () => {
       sex: "",
       height: "",
       weight: "",
-      aseguradora: "",
+      insurance_company_id: "",
     });
     setView("create");
   };
 
   const handleQuickEpisodeClick = () => {
-    setSelectedPatient(null); // No patient pre-selected
+    setSelectedPatient(null);
     setView("episode");
   };
 
   const handlePatientEpisodeClick = () => {
-    // selectedPatient is already set from the edit view
     setView("episode");
   };
 
@@ -99,15 +112,12 @@ const PatientManager = () => {
       let resp;
 
       if (view === "create") {
-        // Llama al método createPatient
         resp = await apiClient.createPatient(formData);
       } else {
-        // Llama al método updatePatient
         resp = await apiClient.updatePatient(selectedPatient.id, formData);
       }
 
       if (resp.success) {
-        // Recargar lista y volver
         await loadPatients();
         setView("list");
       } else {
@@ -124,9 +134,7 @@ const PatientManager = () => {
   // --- Filtering Logic ---
   const filteredPatients = patients.filter((p) => {
     const query = searchQuery.toLowerCase();
-    const fullName = `${p.first_name} ${p.last_name} ${
-      p.mother_last_name || ""
-    }`.toLowerCase();
+    const fullName = `${p.first_name} ${p.last_name} ${p.mother_last_name || ""}`.toLowerCase();
     return fullName.includes(query) || p.rut.toLowerCase().includes(query);
   });
 
@@ -178,15 +186,12 @@ const PatientManager = () => {
       </div>
 
       {error && (
-        <div className="bg-red-500/20 text-red-200 p-3 rounded mb-4">
-          {error}
-        </div>
+        <div className="bg-red-500/20 text-red-200 p-3 rounded mb-4">{error}</div>
       )}
 
       {/* List View */}
       {view === "list" && (
         <>
-          {/* Search Bar */}
           <div className="mb-4">
             <input
               type="text"
@@ -215,10 +220,14 @@ const PatientManager = () => {
                       className="border-b border-white/5 hover:bg-white/5 transition"
                     >
                       <td className="p-3">{p.rut}</td>
-                      <td className="p-3">{`${p.first_name} ${p.last_name} ${
-                        p.mother_last_name || ""
-                      }`}</td>
-                      <td className="p-3">{p.aseguradora || "-"}</td>
+                      <td className="p-3">
+                        {`${p.first_name} ${p.last_name} ${p.mother_last_name || ""}`}
+                      </td>
+                      <td className="p-3">
+                        {p.insurance_company?.nombre_comercial ||
+                          p.insurance_company?.nombre_juridico ||
+                          "-"}
+                      </td>
                       <td className="p-3">
                         <button
                           onClick={() => handleEditClick(p)}
@@ -246,6 +255,8 @@ const PatientManager = () => {
       {(view === "create" || view === "edit") && (
         <form onSubmit={handleSubmit} className="max-w-2xl mx-auto">
           <div className="grid grid-cols-1 md:grid-cols-2 gap-4 mb-6">
+
+            {/* RUT */}
             <div>
               <label className="block text-sm text-white/60 mb-1">RUT</label>
               <input
@@ -256,17 +267,23 @@ const PatientManager = () => {
                 required
               />
             </div>
-            <div>
-              <label className="block text-sm text-white/60 mb-1">
-                Aseguradora
-              </label>
-              <input
-                name="aseguradora"
-                value={formData.aseguradora}
-                onChange={handleInputChange}
-                className="w-full bg-white/10 border border-white/20 rounded p-2 text-white"
-              />
-            </div>
+
+            {/* Aseguradora (Dropdown) */}
+           <div>
+  <label className="block text-sm text-white/60 mb-1">Aseguradora</label>
+  <AutocompleteSelect
+    value={formData.insurance_company_id}
+    onChange={(val) =>
+      setFormData((prev) => ({ ...prev, insurance_company_id: val }))
+    }
+    options={insuranceCompanies}
+    placeholder="Seleccione aseguradora..."
+  />
+</div>
+
+
+
+            {/* Nombre */}
             <div>
               <label className="block text-sm text-white/60 mb-1">Nombre</label>
               <input
@@ -277,6 +294,8 @@ const PatientManager = () => {
                 required
               />
             </div>
+
+            {/* Apellido Paterno */}
             <div>
               <label className="block text-sm text-white/60 mb-1">
                 Apellido Paterno
@@ -289,6 +308,8 @@ const PatientManager = () => {
                 required
               />
             </div>
+
+            {/* Apellido Materno */}
             <div>
               <label className="block text-sm text-white/60 mb-1">
                 Apellido Materno
@@ -300,6 +321,8 @@ const PatientManager = () => {
                 className="w-full bg-white/10 border border-white/20 rounded p-2 text-white"
               />
             </div>
+
+            {/* Age / Height / Weight */}
             <div className="grid grid-cols-3 gap-2">
               <div>
                 <label className="block text-sm text-white/60 mb-1">Edad</label>
@@ -338,6 +361,7 @@ const PatientManager = () => {
             </div>
           </div>
 
+          {/* Buttons */}
           <div className="flex justify-end gap-3 mb-8">
             <button
               type="button"
@@ -354,7 +378,7 @@ const PatientManager = () => {
             </button>
           </div>
 
-          {/* Episodes Section (Only in Edit Mode) */}
+          {/* Episodes Section */}
           {view === "edit" && (
             <div className="border-t border-white/20 pt-6 mt-6">
               <div className="flex justify-between items-center mb-4">
@@ -375,12 +399,10 @@ const PatientManager = () => {
         </form>
       )}
 
-      {/* WIP: Episode Creation View */}
+      {/* Episode View */}
       {view === "episode" && (
         <div className="max-w-2xl mx-auto p-10 bg-white/5 border border-dashed border-white/30 rounded-xl text-center">
-          <h3 className="text-2xl font-semibold mb-4">
-            Crear Nuevo Episodio (WIP)
-          </h3>
+          <h3 className="text-2xl font-semibold mb-4">Crear Nuevo Episodio (WIP)</h3>
 
           <div className="mb-6">
             <label className="block text-sm text-white/60 mb-2">
@@ -388,8 +410,7 @@ const PatientManager = () => {
             </label>
             {selectedPatient ? (
               <div className="bg-health-accent/20 border border-health-accent text-health-accent px-4 py-2 rounded">
-                {selectedPatient.first_name} {selectedPatient.last_name} (
-                {selectedPatient.rut})
+                {selectedPatient.first_name} {selectedPatient.last_name} ({selectedPatient.rut})
               </div>
             ) : (
               <select className="w-full bg-white/10 border border-white/20 rounded p-2 text-white">
@@ -404,8 +425,7 @@ const PatientManager = () => {
           </div>
 
           <p className="text-white/50 italic">
-            El formulario completo de registro de episodios clínicos se
-            implementará aquí.
+            El formulario completo de registro de episodios clínicos se implementará aquí.
           </p>
         </div>
       )}

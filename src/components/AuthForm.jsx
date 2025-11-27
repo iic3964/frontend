@@ -84,6 +84,8 @@ export default function AuthForm({ mode }) {
       }
 
     } catch (err) {
+      console.log("Authentication error:", err);
+      console.log("Form data:", form);
       console.error(err);
       setError(err.message);
       setLoading(false);
