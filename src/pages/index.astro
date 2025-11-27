@@ -1,72 +1,105 @@
 ---
+import MetricsDashboard from "../components/metrics/MetricsDashboard.jsx";
 import Card from "../components/UI/Card.astro";
 import BaseLayout from "../layouts/Base.astro";
 ---
 
 <script is:inline>
-  const sessionStr = localStorage.getItem("saluia.session");
-  if (!sessionStr) {
-    window.location.href = "/auth/login";
-  } else {
+  (function() {
+    const sessionStr = localStorage.getItem("saluia.session");
+
+    if (!sessionStr) {
+      window.location.href = "/auth/login";
+      return;
+    }
+
     try {
       const session = JSON.parse(sessionStr);
       const role = session.user?.user_metadata?.role;
 
       document.addEventListener("DOMContentLoaded", () => {
         const adminBlock = document.getElementById("admin-actions");
-        
+        const metricsButton = document.getElementById("metrics-button");
+
         if (role === "admin" && adminBlock) {
           adminBlock.classList.remove("hidden");
         }
+
+        // Mostrar botón de métricas para supervisores y admins
+        if ((role === "supervisor" || role === "admin") && metricsButton) {
+          metricsButton.classList.remove("hidden");
+        }
       });
     } catch (e) {
-      console.error("Error parsing session", e);
+      localStorage.removeItem("saluia.session");
+      window.location.href = "/auth/login";
     }
-  }
+  })();
 </script>
 
 <BaseLayout title="SaluIA — Inicio">
-  <Card>
-    <div class="p-10 flex flex-col items-center gap-6 text-center">
-      <h2 class="text-2xl font-semibold">Bienvenido a SaluIA</h2>
-      <p class="text-white/70 max-w-prose">
-        Simulador de activación de Ley de Urgencia. Selecciona una opción:
-      </p>
+  <div class="space-y-6">
+    {/* Actions Section */}
+    <Card>
+      <div class="p-6 md:p-8 flex flex-col items-center gap-6 text-center">
+        <div>
+          <h2 class="text-2xl font-semibold mb-2">Acciones Rápidas</h2>
+          <p class="text-white/70 text-sm">
+            Selecciona una opción para gestionar episodios
+          </p>
+        </div>
 
-      {/* Standard Actions (Fila 1) */}
-      <div class="mt-2 grid gap-4 sm:grid-cols-2 w-full max-w-lg">
-        <a
-          href="/clinical_attentions"
-          class="rounded-2xl bg-health-accent text-black py-5 text-lg font-medium text-center transition hover:bg-health-accentDark"
-        >
-          Consultar
-        </a>
-        <a
-          href="/send"
-          class="rounded-2xl bg-white/10 text-white py-5 text-lg font-medium text-center transition hover:bg-white/20"
-        >
-          Enviar
-        </a>
-      </div>
+        {/* Standard Actions (Fila 1) */}
+        <div class="grid gap-4 sm:grid-cols-2 w-full max-w-lg">
+          <a
+            href="/clinical_attentions"
+            class="rounded-2xl bg-health-accent text-black py-5 text-lg font-medium text-center transition hover:bg-health-accentDark"
+          >
+            Consultar
+          </a>
+          <a
+            href="/send"
+            class="rounded-2xl bg-white/10 text-white py-5 text-lg font-medium text-center transition hover:bg-white/20"
+          >
+            Enviar
+          </a>
+        </div>
 
-      {/* Admin Actions (Fila 2) - Oculto por defecto, mismo Grid */}
-      <div
-        id="admin-actions"
-        class="hidden mt-4 grid gap-4 sm:grid-cols-2 w-full max-w-lg"
-      >
+        {/* Metrics Button (Solo para supervisores/admins) */}
         <a
-          href="/admin/patients"
-          class="rounded-2xl bg-blue-600 text-white py-5 text-lg font-medium text-center transition hover:bg-blue-700 shadow-lg border border-blue-400/30"
+          id="metrics-button"
+          href="/admin/metrics"
+          class="hidden w-full max-w-lg rounded-2xl bg-gradient-to-r from-health-accent to-blue-500 text-black py-4 text-lg font-medium text-center transition hover:shadow-lg hover:scale-[1.02] border border-health-accent/30"
         >
-          Ver Pacientes
+          📊 Ver Métricas de Todo el Equipo
         </a>
-        <a
-          href="/admin/users"
-          class="rounded-2xl bg-purple-600 text-white py-5 text-lg font-medium text-center transition hover:bg-purple-700 shadow-lg border border-purple-400/30"
+
+        {/* Admin Actions (Fila 2) - Oculto por defecto, mismo Grid */}
+        <div
+          id="admin-actions"
+          class="hidden grid gap-4 sm:grid-cols-2 w-full max-w-lg"
         >
-          Ver Usuarios
-        </a>
+          <a
+            href="/admin/patients"
+            class="rounded-2xl bg-blue-600 text-white py-4 text-base font-medium text-center transition hover:bg-blue-700 shadow-lg border border-blue-400/30"
+          >
+            Ver Pacientes
+          </a>
+          <a
+            href="/admin/users"
+            class="rounded-2xl bg-purple-600 text-white py-4 text-base font-medium text-center transition hover:bg-purple-700 shadow-lg border border-purple-400/30"
+          >
+            Ver Usuarios
+          </a>
+        </div>
       </div>
-    </div>
-  </Card>
+    </Card>
+
+    {/* Métricas Dashboard */}
+    <Card>
+      <div class="p-6 md:p-8">
+        <MetricsDashboard client:load />
+      </div>
+    </Card>
+  </div>
 </BaseLayout>
