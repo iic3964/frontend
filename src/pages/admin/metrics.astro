@@ -1,0 +1,59 @@
+---
+import BaseLayout from "../../layouts/Base.astro";
+import AllUsersMetricsTable from "../../components/metrics/AllUsersMetricsTable.jsx";
+import Card from "../../components/UI/Card.astro";
+---
+
+<script is:inline>
+  (function() {
+    const sessionStr = localStorage.getItem("saluia.session");
+
+    if (!sessionStr) {
+      window.location.href = "/auth/login";
+      return;
+    }
+
+    try {
+      const session = JSON.parse(sessionStr);
+      const role = session.user?.user_metadata?.role;
+
+      // Solo supervisores y admins pueden acceder
+      if (role !== "supervisor" && role !== "admin") {
+        window.location.href = "/";
+      }
+
+    } catch (e) {
+      localStorage.removeItem("saluia.session");
+      window.location.href = "/auth/login";
+    }
+  })();
+</script>
+
+<BaseLayout title="SaluIA — Métricas del Equipo">
+  <Card>
+    <div class="p-6 md:p-8 space-y-6">
+      {/* Header */}
+      <div class="flex items-center justify-between flex-wrap gap-4">
+        <div>
+          <h2 class="text-2xl font-bold text-white mb-2">
+            Métricas del Equipo Médico
+          </h2>
+          <p class="text-white/60 text-sm">
+            Vista completa del desempeño de todos los médicos del servicio
+          </p>
+        </div>
+        
+        <a
+          href="/"
+          class="px-4 py-2 bg-white/10 hover:bg-white/20 text-white rounded-lg transition border border-white/10"
+        >
+          ← Volver al Inicio
+        </a>
+      </div>
+
+      {/* Tabla de métricas */}
+      <AllUsersMetricsTable client:load />
+    </div>
+  </Card>
+</BaseLayout>
+

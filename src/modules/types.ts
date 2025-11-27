@@ -220,3 +220,21 @@ export interface UpdateInsuranceCompanyRequest {
   nombre_juridico?: string | null;
   rut?: string | null;
 }
+
+// Metrics Types
+export type UserMetrics = {
+  userId: string;
+  nombre: string;
+  rol: UserRole;
+  episodiosSubidos: number;
+  rechazosSupervisor: number;
+  rechazosAseguradora: {
+    aprobadosPorSupervisor: number;
+    rechazadosPorSupervisor: number;
+  };
+  // Computed fields
+  pctRechazosSupervisor?: number;
+  pctRechazosAseguradora?: number;
+  totalRechazosAseguradora?: number;
+  casosDisputables?: number;
+};
