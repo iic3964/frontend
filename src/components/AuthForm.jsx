@@ -25,7 +25,7 @@ export default function AuthForm({ mode }) {
 
     try {
       if (mode === "register") {
-        const regResponse = await apiClient.register({
+        const regResponse = await apiClient.registerUser({
           first: form.first,
           last: form.last,
           email: form.email,
@@ -84,6 +84,8 @@ export default function AuthForm({ mode }) {
       }
 
     } catch (err) {
+      console.log("Authentication error:", err);
+      console.log("Form data:", form);
       console.error(err);
       setError(err.message);
       setLoading(false);

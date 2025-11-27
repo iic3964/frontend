@@ -99,21 +99,22 @@ class ApiClient {
   }
 
   async registerUser(
-    payload: CreateUserRequest
-  ): Promise<ApiResponse<RegisterResponse>> {
-    const body = {
-      email: payload.email,
-      password: payload.password,
-      first: payload.first_name,
-      last: payload.last_name,
-      role: payload.role,
-    };
+  payload: CreateUserRequest
+): Promise<ApiResponse<RegisterResponse>> {
+  const body = {
+    email: payload.email,
+    password: payload.password,
+    first: payload.first,         // <-- antes first_name
+    last: payload.last,           // <-- antes last_name
+    role: payload.role,
+  };
 
-    return this.request<RegisterResponse>("/auth/register", {
-      method: "POST",
-      body: JSON.stringify(body),
-    });
-  }
+  return this.request<RegisterResponse>("/auth/register", {
+    method: "POST",
+    body: JSON.stringify(body),
+  });
+}
+
 
   // Medics / Doctors
   async getMedics(): Promise<
