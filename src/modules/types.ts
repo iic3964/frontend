@@ -23,12 +23,7 @@ export type Patient = {
   rut: string;
   first_name: string;
   last_name: string;
-  mother_last_name?: string;
-  age?: number;
-  sex?: string;
-  height?: number;
-  weight?: number;
-  aseguradora?: string; // TODO: cambiar al objeto
+  email?: string;
   phone?: string;
   address?: string;
   city?: string;
@@ -58,30 +53,6 @@ export type DoctorWithId = Doctor & {
 export type PatientWithId = Patient & {
   id: string;
 };
-
-export interface CreatePatientRequest {
-  rut: string;
-  first_name: string;
-  last_name: string;
-  mother_last_name?: string;
-  age?: number;
-  sex?: string;
-  height?: number;
-  weight?: number;
-  aseguradora?: string; // TODO: cambiar al objeto
-}
-
-export interface UpdatePatientRequest {
-  rut?: string;
-  first_name?: string;
-  last_name?: string;
-  mother_last_name?: string;
-  age?: number;
-  sex?: string;
-  height?: number;
-  weight?: number;
-  aseguradora?: string; // TODO: cambiar al objeto
-}
 
 export type ClinicalAttention = {
   id: string;
@@ -118,7 +89,7 @@ export type UpdateClinicalAttentionRequest = {
 
 // --- Auth Types (Based on FastAPI models) ---
 
-export type UserRole = 'resident' | 'supervisor' | 'admin';
+export type UserRole = 'resident' | 'supervisor';
 
 /**
  * Payload for /auth/login
@@ -181,25 +152,6 @@ export type RegisterResponse = {
  */
 export type LoginResponse = {
   session: AuthSession;
-};
-
-export interface CreateUserRequest {
-  email: string;
-  password: string;
-  first_name: string;
-  last_name: string;
-  role: UserRole;
-}
-
-export interface UpdateUserRequest {
-  first_name?: string;
-  last_name?: string;
-  email?: string;
-  role?: UserRole;
-}
-
-export type UserWithRole = DoctorWithId & {
-  role: UserRole;
 };
 
 export interface InsuranceCompany {

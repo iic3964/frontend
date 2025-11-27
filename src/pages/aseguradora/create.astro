@@ -4,30 +4,6 @@ import Card from "../../components/UI/Card.astro";
 import CreateInsuranceCompany from "../../components/insurance_company/CreateInsuranceCompany.jsx";
 ---
 
-<script is:inline>
-  (function() {
-    const sessionStr = localStorage.getItem("saluia.session");
-
-    if (!sessionStr) {
-      window.location.href = "/auth/login";
-      return;
-    }
-
-    try {
-      const session = JSON.parse(sessionStr);
-      const role = session.user?.user_metadata?.role;
-
-      if (role !== "admin") {
-        window.location.href = "/";
-      }
-
-    } catch (e) {
-      localStorage.removeItem("saluia.session");
-      window.location.href = "/auth/login";
-    }
-  })();
-</script>
-
 <BaseLayout title="Crear Aseguradora — SaluIA">
   <Card>
     <div class="p-6 md:p-8">

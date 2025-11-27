@@ -358,6 +358,10 @@ export default function ClinicalAttentionDetail({ attentionId }) {
               <span className="text-white/50">RUT:</span> {ca.patient.rut}
             </li>
             <li>
+              <span className="text-white/50">Email:</span>{" "}
+              {ca.patient.email || "N/A"}
+            </li>
+            <li>
               <span className="text-white/50">Teléfono:</span>{" "}
               {ca.patient.phone || "N/A"}
             </li>
