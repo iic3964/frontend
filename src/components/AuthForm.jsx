@@ -68,7 +68,11 @@ export default function AuthForm({ mode }) {
         });
 
         if (!response.success) {
-          throw new Error(response.error || "Credenciales inválidas");
+          const errorMsg = response.error || "";
+          if (errorMsg.includes("401") || errorMsg.includes("Unauthorized")) {
+            throw new Error("Credenciales inválidas");
+          }
+          throw new Error(errorMsg || "Error al iniciar sesión");
         }
 
         const data = response.data;
