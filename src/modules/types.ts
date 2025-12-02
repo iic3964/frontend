@@ -221,6 +221,29 @@ export interface UpdateInsuranceCompanyRequest {
   rut?: string | null;
 }
 
+// Clinical Attention History Types
+export type ClinicalAttentionHistoryItem = {
+  id: string;
+  id_episodio: string | null;
+  created_at: string | null;
+  resident_doctor_name: string | null;
+  supervisor_doctor_name: string | null;
+  applies_urgency_law: boolean | null;
+};
+
+export type PatientClinicalHistory = {
+  patient_id: string;
+  attentions: ClinicalAttentionHistoryItem[];
+};
+
+export type ClinicalAttentionHistoryRequest = {
+  patient_ids: string[];
+};
+
+export type ClinicalAttentionHistoryResponse = {
+  patients: PatientClinicalHistory[];
+};
+
 // Metrics Types
 export type UserMetrics = {
   userId: string;

@@ -19,6 +19,8 @@ import type {
   UpdateClinicalAttentionRequest,
   CreateInsuranceCompanyRequest,
   UpdateInsuranceCompanyRequest,
+  ClinicalAttentionHistoryRequest,
+  ClinicalAttentionHistoryResponse,
 } from "./types";
 
 type QueryParams = Record<string, string | number | boolean | undefined>;
@@ -228,6 +230,18 @@ class ApiClient {
       method: "DELETE",
       body: JSON.stringify({ deleted_by_id }),
     });
+  }
+
+  async getClinicalAttentionHistory(
+    payload: ClinicalAttentionHistoryRequest
+  ): Promise<ApiResponse<ClinicalAttentionHistoryResponse>> {
+    return this.request<ClinicalAttentionHistoryResponse>(
+      "/clinical_attentions/history",
+      {
+        method: "POST",
+        body: JSON.stringify(payload),
+      }
+    );
   }
 
   // ================================

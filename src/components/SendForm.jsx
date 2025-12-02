@@ -262,11 +262,11 @@ const isFormValid =
       )}
       {/* MOTIVO DE CONSULTA */}
       <div className="flex flex-col gap-2">
-        <label className="text-sm text-white/70">Motivo de Consulta *</label>
+        <label className="text-sm text-health-text-muted">Motivo de Consulta *</label>
         <textarea
           value={motivoConsulta}
           onChange={(e) => setMotivoConsulta(e.target.value)}
-          className="rounded-lg bg-black/40 border border-white/10 px-3 py-2 min-h-24"
+          className="rounded-lg bg-white border border-health-border px-3 py-2 min-h-32 text-health-text"
           required
         />
       </div>
@@ -283,7 +283,7 @@ const isFormValid =
       </div>
       {/* TRIAGE */}
         <div className="flex flex-col gap-2">
-          <label className="text-sm text-white/70">Triage (1 = más grave) *</label>
+          <label className="text-sm text-health-text-muted">Triage (1 = más grave) *</label>
 
           <div className="flex gap-2">
             {[1, 2, 3, 4, 5].map((n) => (
@@ -292,10 +292,10 @@ const isFormValid =
                 type="button"
                 onClick={() => setTriage(n)}
                 className={`
-                  px-4 py-2 rounded-lg border transition font-semibold 
-                  ${triage === n 
-                    ? "bg-health-accent text-black border-health-accentDark" 
-                    : "bg-black/40 text-white/70 border-white/10 hover:bg-black/60"}
+                  px-4 py-2 rounded-lg border transition font-semibold
+                  ${triage === n
+                    ? "bg-health-accent text-white border-health-accent"
+                    : "bg-white text-health-text border-health-border hover:bg-gray-50"}
                 `}
               >
                 {n}
@@ -304,7 +304,7 @@ const isFormValid =
           </div>
 
           {!triage && (
-            <p className="text-xs text-red-400">Debes seleccionar un nivel de triage</p>
+            <p className="text-xs text-red-600">Debes seleccionar un nivel de triage</p>
           )}
         </div>
 

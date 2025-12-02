@@ -9,6 +9,8 @@ const PatientManager = () => {
   const [error, setError] = useState(null);
   const [selectedPatient, setSelectedPatient] = useState(null);
   const [searchQuery, setSearchQuery] = useState("");
+  const [clinicalHistory, setClinicalHistory] = useState([]);
+  const [loadingHistory, setLoadingHistory] = useState(false);
 
   // Form state
   const [formData, setFormData] = useState({
@@ -57,6 +59,26 @@ const PatientManager = () => {
     }
   };
 
+  const loadClinicalHistory = async (patientId) => {
+    setLoadingHistory(true);
+    try {
+      const resp = await apiClient.getClinicalAttentionHistory({
+        patient_ids: [patientId],
+      });
+      console.log("Clinical history response:", patientId);
+      if (resp.success && resp.data && resp.data.patients.length > 0) {
+        setClinicalHistory(resp.data.patients[0].attentions || []);
+      } else {
+        setClinicalHistory([]);
+      }
+    } catch (err) {
+      console.error("Error loading clinical history:", err);
+      setClinicalHistory([]);
+    } finally {
+      setLoadingHistory(false);
+    }
+  };
+
   // --- Handlers ---
 
   const handleEditClick = (patient) => {
@@ -73,6 +95,7 @@ const PatientManager = () => {
       insurance_company_id: patient.insurance_company?.id || "",
     });
     setView("edit");
+    loadClinicalHistory(patient.id);
   };
 
   const handleCreateClick = () => {
@@ -382,50 +405,86 @@ const PatientManager = () => {
           {view === "edit" && (
             <div className="border-t border-white/20 pt-6 mt-6">
               <div className="flex justify-between items-center mb-4">
-                <h3 className="text-xl font-semibold">Episodios Clínicos</h3>
-                <button
-                  type="button"
-                  onClick={handlePatientEpisodeClick}
-                  className="text-sm bg-gray-100 hover:bg-gray-200 px-3 py-1 rounded transition cursor-pointer text-health-text"
-                >
-                  + Nuevo Episodio
-                </button>
+                <h3 className="text-xl font-semibold">Historial de Episodios Clínicos</h3>
+                
               </div>
-              <div className="bg-gray-50 rounded-lg p-4 text-center text-health-text-muted border border-health-border">
-                <p>No hay episodios recientes (Implementar listado aquí)</p>
-              </div>
+
+              {loadingHistory ? (
+                <div className="bg-gray-50 rounded-lg p-4 text-center text-health-text-muted border border-health-border">
+                  <p>Cargando historial...</p>
+                </div>
+              ) : clinicalHistory.length === 0 ? (
+                <div className="bg-gray-50 rounded-lg p-4 text-center text-health-text-muted border border-health-border">
+                  <p>No hay episodios clínicos registrados para este paciente.</p>
+                </div>
+              ) : (
+                <div className="overflow-x-auto">
+                  <table className="w-full text-left border-collapse bg-white rounded-lg overflow-hidden">
+                    <thead>
+                      <tr className="bg-gray-100 border-b border-health-border text-health-text-muted text-sm">
+                        <th className="p-3">ID Episodio</th>
+                        <th className="p-3">Fecha</th>
+                        <th className="p-3">Médico Residente</th>
+                        <th className="p-3">Médico Supervisor</th>
+                        <th className="p-3">Ley Urgencia</th>
+                        <th className="p-3">Acciones</th>
+                      </tr>
+                    </thead>
+                    <tbody>
+                      {clinicalHistory.map((attention) => (
+                        <tr
+                          key={attention.id}
+                          className="border-b border-health-border hover:bg-gray-50 transition"
+                        >
+                          <td className="p-3 text-sm">
+                            {attention.id_episodio || "No Informado"}
+                          </td>
+                          <td className="p-3 text-sm">
+                            {attention.created_at
+                              ? new Date(attention.created_at).toLocaleDateString("es-CL", {
+                                  year: "numeric",
+                                  month: "2-digit",
+                                  day: "2-digit",
+                                  hour: "2-digit",
+                                  minute: "2-digit",
+                                })
+                              : "-"}
+                          </td>
+                          <td className="p-3 text-sm">
+                            {attention.resident_doctor_name || "-"}
+                          </td>
+                          <td className="p-3 text-sm">
+                            {attention.supervisor_doctor_name || "-"}
+                          </td>
+                          <td className="p-3 text-sm">
+                            {attention.applies_urgency_law === null ? (
+                              <span className="text-gray-400">-</span>
+                            ) : attention.applies_urgency_law ? (
+                              <span className="text-green-600 font-semibold">Sí</span>
+                            ) : (
+                              <span className="text-red-600 font-semibold">No</span>
+                            )}
+                          </td>
+                          <td className="p-3 text-sm">
+                            <a
+                              href={`/clinical_attentions/details/${attention.id}`}
+                              className="text-blue-600 hover:text-blue-700 font-medium underline"
+                            >
+                              Ver
+                            </a>
+                          </td>
+                        </tr>
+                      ))}
+                    </tbody>
+                  </table>
+                </div>
+              )}
             </div>
           )}
         </form>
       )}
 
-      {/* Episode View */}
-      {view === "episode" && (
-        <div className="max-w-2xl mx-auto p-10 bg-gray-50 border border-dashed border-health-border rounded-xl text-center">
-          <h3 className="text-2xl font-semibold mb-4 text-health-text">Crear Nuevo Episodio (WIP)</h3>
-
-          <div className="mb-6">
-            <label className="block text-sm text-health-text-muted mb-2">
-              Paciente Seleccionado:
-            </label>
-            {selectedPatient ? (
-              <div className="bg-blue-50 border border-health-accent text-health-accent px-4 py-2 rounded">
-                {selectedPatient.first_name} {selectedPatient.last_name} ({selectedPatient.rut})
-              </div>
-            ) : (
-              <select className="w-full bg-white border border-health-border rounded p-2 text-health-text">
-                <option value="">-- Seleccionar Paciente --</option>
-                {patients.map((p) => (
-                  <option key={p.id} value={p.id}>
-                    {p.first_name} {p.last_name} ({p.rut})
-                  </option>
-                ))}
-              </select>
-            )}
-          </div>
-
-        </div>
-      )}
+      
     </div>
   );
 };
