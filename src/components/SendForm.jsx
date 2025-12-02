@@ -19,20 +19,22 @@ export default function SendForm() {
   const [anamnesis, setAnamnesis] = useState("");
   const [hallazgosClinicos, setHallazgosClinicos] = useState("");
   const [diagnosticoPresuntivo, setDiagnosticoPresuntivo] = useState("");
-  const [indicaciones, setIndicaciones] = useState("");
+  const [motivoConsulta, setMotivoConsulta] = useState("");
+
 
   // 🔥 Signos vitales con valores normales
   const [vitales, setVitales] = useState({
-    temperatura: 36.8,
-    presion_arterial_sistolica: 120,
-    presion_arterial_diastolica: 80,
-    frecuencia_cardiaca: 80,
-    frecuencia_respiratoria: 16,
-    saturacion_oxigeno: 98,
-    glasgow: 15,
-    dolor_escala: 0,
-    glicemia_capilar: 90,
-  });
+      temperatura: "",
+      presion_arterial_sistolica: "",
+      presion_arterial_diastolica: "",
+      frecuencia_cardiaca: "",
+      frecuencia_respiratoria: "",
+      saturacion_oxigeno: "",
+      glasgow: "",
+      dolor_escala: "",
+      glicemia_capilar: "",
+    });
+
 
   const updateVital = (field, value) => {
     setVitales((prev) => ({ ...prev, [field]: value }));
@@ -84,6 +86,7 @@ export default function SendForm() {
 
     return () => (mounted = false);
   }, []);
+  const [triage, setTriage] = useState("");
 
   const [loading, setLoading] = useState(false);
   const [error, setError] = useState(null);
@@ -91,28 +94,34 @@ export default function SendForm() {
 
   // 🔥 Construcción del TXT clínico
   const buildClinicalTXT = () => {
-    return `
-===== ANAMNESIS =====
-${anamnesis || "No registrado"}
+      return `
+    ===== TRIAGE =====
+${triage}
 
-===== SIGNOS VITALES =====
-Temperatura: ${vitales.temperatura}
-Presión Arterial: ${vitales.presion_arterial_sistolica}/${vitales.presion_arterial_diastolica}
-Frecuencia Cardíaca: ${vitales.frecuencia_cardiaca}
-Frecuencia Respiratoria: ${vitales.frecuencia_respiratoria}
-Saturación O2: ${vitales.saturacion_oxigeno}
-Glasgow: ${vitales.glasgow}
-Dolor (0-10): ${vitales.dolor_escala}
-Glicemia Capilar: ${vitales.glicemia_capilar}
+    ===== MOTIVO DE CONSULTA =====
+    ${motivoConsulta || "No registrado"}
 
-===== HALLAZGOS CLÍNICOS =====
-${hallazgosClinicos || "No registrado"}
+    ===== ANAMNESIS =====
+    ${anamnesis || "No registrado"}
 
-===== DIAGNÓSTICO PRESUNTIVO =====
-${diagnosticoPresuntivo || "No registrado"}
+    ===== SIGNOS VITALES =====
+    Temperatura: ${vitales.temperatura}
+    Presión Arterial: ${vitales.presion_arterial_sistolica}/${vitales.presion_arterial_diastolica}
+    Frecuencia Cardíaca: ${vitales.frecuencia_cardiaca}
+    Frecuencia Respiratoria: ${vitales.frecuencia_respiratoria}
+    Saturación O2: ${vitales.saturacion_oxigeno}
+    Glasgow: ${vitales.glasgow}
+    Dolor (0-10): ${vitales.dolor_escala}
+    Glicemia Capilar: ${vitales.glicemia_capilar}
 
-    `.trim();
-  };
+    ===== HALLAZGOS CLÍNICOS =====
+    ${hallazgosClinicos || "No registrado"}
+
+    ===== DIAGNÓSTICO PRESUNTIVO =====
+    ${diagnosticoPresuntivo || "No registrado"}
+      `.trim();
+    };
+
 
   const handleSubmit = async (e) => {
     e.preventDefault();
@@ -147,12 +156,18 @@ ${diagnosticoPresuntivo || "No registrado"}
     }
   };
 
-  const isFormValid =
-    patientId &&
-    residentDoctorId &&
-    supervisorDoctorId &&
-    anamnesis &&
-    diagnosticoPresuntivo;
+  const areVitalsFilled = Object.values(vitales).every(v => v !== "" && v !== null);
+
+const isFormValid =
+  patientId &&
+  residentDoctorId &&
+  supervisorDoctorId &&
+  motivoConsulta &&
+  anamnesis &&
+  triage &&
+  diagnosticoPresuntivo &&
+  areVitalsFilled;
+
 
   return (
     <form onSubmit={handleSubmit} className="space-y-5">
@@ -245,6 +260,16 @@ ${diagnosticoPresuntivo || "No registrado"}
           {medicsError}
         </div>
       )}
+      {/* MOTIVO DE CONSULTA */}
+      <div className="flex flex-col gap-2">
+        <label className="text-sm text-white/70">Motivo de Consulta *</label>
+        <textarea
+          value={motivoConsulta}
+          onChange={(e) => setMotivoConsulta(e.target.value)}
+          className="rounded-lg bg-black/40 border border-white/10 px-3 py-2 min-h-24"
+          required
+        />
+      </div>
 
       {/* ANAMNESIS */}
       <div className="flex flex-col gap-2">
@@ -256,6 +281,32 @@ ${diagnosticoPresuntivo || "No registrado"}
           required
         />
       </div>
+      {/* TRIAGE */}
+        <div className="flex flex-col gap-2">
+          <label className="text-sm text-white/70">Triage (1 = más grave) *</label>
+
+          <div className="flex gap-2">
+            {[1, 2, 3, 4, 5].map((n) => (
+              <button
+                key={n}
+                type="button"
+                onClick={() => setTriage(n)}
+                className={`
+                  px-4 py-2 rounded-lg border transition font-semibold 
+                  ${triage === n 
+                    ? "bg-health-accent text-black border-health-accentDark" 
+                    : "bg-black/40 text-white/70 border-white/10 hover:bg-black/60"}
+                `}
+              >
+                {n}
+              </button>
+            ))}
+          </div>
+
+          {!triage && (
+            <p className="text-xs text-red-400">Debes seleccionar un nivel de triage</p>
+          )}
+        </div>
 
       {/* SIGNOS VITALES */}
       <div className="space-y-3">
@@ -281,6 +332,7 @@ ${diagnosticoPresuntivo || "No registrado"}
                 onChange={(e) => updateVital(field, e.target.value)}
                 className="rounded-lg bg-white border border-health-border px-3 py-2 text-health-text"
               />
+
             </div>
           ))}
         </div>

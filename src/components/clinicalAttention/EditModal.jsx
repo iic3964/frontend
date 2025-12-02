@@ -18,6 +18,9 @@ export default function EditModal({
     "Dolor (0-10)": "N/A",
     "Glicemia Capilar": "N/A",
   });
+  const [motivoConsulta, setMotivoConsulta] = useState("");
+  const [triage, setTriage] = useState("");
+
   const [hallazgos, setHallazgos] = useState("");
   const [diagnostico, setDiagnostico] = useState("");
 
@@ -57,6 +60,8 @@ export default function EditModal({
       setAnamnesis(getSection("ANAMNESIS"));
       setHallazgos(getSection("HALLAZGOS CLÍNICOS"));
       setDiagnostico(getSection("DIAGNÓSTICO PRESUNTIVO"));
+      setMotivoConsulta(getSection("MOTIVO DE CONSULTA"));
+      setTriage(getSection("TRIAGE"));
 
       // signos vitales
       const vitals = getSection("SIGNOS VITALES");
@@ -81,11 +86,17 @@ export default function EditModal({
   // Usamos useCallback o simplemente una función pura para evitar problemas de dependencias,
   // pero dado que se usa en render y submit, la dejamos como función simple.
   const buildTxt = () => {
-    const signosTxt = Object.entries(signos)
-      .map(([k, v]) => `${k}: ${v}`)
-      .join("\n");
+  const signosTxt = Object.entries(signos)
+    .map(([k, v]) => `${k}: ${v}`)
+    .join("\n");
 
-    return `===== ANAMNESIS =====
+  return `===== TRIAGE =====
+${triage}
+
+===== MOTIVO DE CONSULTA =====
+${motivoConsulta}
+
+===== ANAMNESIS =====
 ${anamnesis}
 
 ===== SIGNOS VITALES =====
@@ -97,7 +108,8 @@ ${hallazgos}
 ===== DIAGNÓSTICO PRESUNTIVO =====
 ${diagnostico}
 `;
-  };
+};
+
 
   // -----------------------------
   // DIRTY CHECK (Validar cambios)
@@ -183,18 +195,56 @@ ${diagnostico}
 
         <form onSubmit={handleSubmit} className="p-6 space-y-6 overflow-y-auto">
           {/* ID EPISODIO */}
-          <div>
-            <label className="block text-sm font-medium text-white/70 mb-2">
-              ID Episodio
-            </label>
-            <input
-              value={idEpisode}
-              onChange={(e) => setIdEpisode(e.target.value)}
-              className="w-full bg-[#0f1220] border border-white/10 rounded-lg px-4 py-2 text-white focus:ring-2 focus:ring-health-accent outline-none transition-all shadow-inner"
-            />
-            <p className="text-xs text-white/40 mt-1">
-            </p>
+<div>
+  <label className="block text-sm font-medium text-white/70 mb-2">
+    ID Episodio
+  </label>
+  <input
+    value={idEpisode}
+    onChange={(e) => setIdEpisode(e.target.value)}
+    className="w-full bg-[#0f1220] border border-white/10 rounded-lg px-4 py-2 text-white focus:ring-2 focus:ring-health-accent outline-none transition-all shadow-inner"
+  />
+  <p className="text-xs text-white/40 mt-1">
+  </p>
+</div>
+{/* MOTIVO DE CONSULTA */}
+        <div>
+          <label className="block text-sm font-medium text-white/70 mb-2">
+            Motivo de Consulta
+          </label>
+          <textarea
+            value={motivoConsulta}
+            onChange={(e) => setMotivoConsulta(e.target.value)}
+            rows={2}
+            className="w-full bg-[#0f1220] border border-white/10 rounded-lg px-4 py-3 text-white focus:ring-2 focus:ring-health-accent outline-none transition-all shadow-inner"
+          />
+        </div>
+        {/* TRIAGE */}
+        <div>
+          <label className="block text-sm font-medium text-white/70 mb-2">
+            Triage (1 = más grave)
+          </label>
+
+          <div className="flex gap-2">
+            {[1, 2, 3, 4, 5].map((n) => (
+              <button
+                key={n}
+                type="button"
+                onClick={() => setTriage(String(n))}
+                className={`
+                  px-4 py-2 rounded-lg border transition font-semibold 
+                  ${
+                    triage === String(n)
+                      ? "bg-health-accent text-black border-health-accent-dark"
+                      : "bg-[#0f1220] text-white/70 border-white/10 hover:bg-white/10"
+                  }
+                `}
+              >
+                {n}
+              </button>
+            ))}
           </div>
+        </div>
 
 
           {/* ANAMNESIS */}

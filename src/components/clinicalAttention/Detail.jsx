@@ -15,6 +15,8 @@ const parseClinicalSummary = (txt) => {
     .filter(Boolean);
 
   const output = {
+    triage: "",
+    motivoConsulta: "",
     anamnesis: "",
     signosVitalesRaw: "",
     signosVitales: {},
@@ -25,13 +27,15 @@ const parseClinicalSummary = (txt) => {
   for (let i = 0; i < raw.length; i++) {
     const block = raw[i].toLowerCase();
 
+    if (block === "triage") output.triage = raw[i + 1] || "";
+    if (block === "motivo de consulta") output.motivoConsulta = raw[i + 1] || "";
     if (block === "anamnesis") output.anamnesis = raw[i + 1] || "";
     if (block === "signos vitales") output.signosVitalesRaw = raw[i + 1] || "";
     if (block === "hallazgos clínicos") output.hallazgos = raw[i + 1] || "";
-    if (block === "diagnóstico presuntivo")
-      output.diagnostico = raw[i + 1] || "";
+    if (block === "diagnóstico presuntivo") output.diagnostico = raw[i + 1] || "";
   }
 
+  // Parse signos vitales
   if (output.signosVitalesRaw) {
     output.signosVitalesRaw.split("\n").forEach((l) => {
       if (l.includes(":")) {
@@ -43,6 +47,7 @@ const parseClinicalSummary = (txt) => {
 
   return output;
 };
+
 
 // =====================
 // COMPONENTE TARJETA MÉDICO (HOVER EFFECT)
@@ -288,7 +293,7 @@ export default function ClinicalAttentionDetail({ attentionId }) {
   const isOwner = ca.resident_doctor?.id === userId;
   const canEdit =
     userRole === "supervisor" || (userRole === "resident" && isOwner);
-
+  console.log("CAN EDIT:", canEdit,userRole);
   return (
     <div className="p-6 flex flex-col gap-6 animate-in fade-in duration-500 relative">
 
@@ -313,12 +318,12 @@ export default function ClinicalAttentionDetail({ attentionId }) {
           </svg>
           Volver a lista
         </a>
-        <div className="text-health-text text-sm font-mono bg-gray-50 px-3 py-1 rounded-md border border-health-border">
+        {clinicalAttention?.id_episodio && (<div className="text-health-text text-sm font-mono bg-gray-50 px-3 py-1 rounded-md border border-health-border">
           ID Episodio:{" "}
           <span className="text-health-accent font-semibold">
-            {clinicalAttention?.id_episodio || "-"}
+          {clinicalAttention?.id_episodio }
           </span>
-        </div>
+        </div>)}
 
         {canEdit && (
           <div className="flex gap-3">
@@ -422,8 +427,49 @@ export default function ClinicalAttentionDetail({ attentionId }) {
           <h2 className="text-lg font-semibold mb-4 text-health-accent">
             Información Clínica
           </h2>
+          {/* MOTIVO DE CONSULTA */}
+      <div className="mb-6">
+        <h3 className="text-sm text-health-text-muted font-semibold uppercase tracking-wide">
+          Motivo de Consulta
+        </h3>
 
-          {/* ANAMNESIS */}
+        <p className="text-health-text mt-2 leading-relaxed whitespace-pre-line">
+          {parsed?.motivoConsulta || "N/A"}
+        </p>
+      </div>
+
+                {/* TRIAGE */}
+<div className="mb-6">
+  <h3 className="text-sm text-health-text-muted font-semibold uppercase tracking-wide">
+    Triage
+  </h3>
+
+        {parsed?.triage ? (
+          <span
+            className={`
+              inline-block mt-2 px-3 py-1 rounded-lg text-sm font-semibold
+              ${
+                parsed.triage === "1"
+                  ? "bg-red-600 text-white"
+                  : parsed.triage === "2"
+                  ? "bg-orange-500 text-white"
+                  : parsed.triage === "3"
+                  ? "bg-yellow-500 text-white"
+                  : parsed.triage === "4"
+                  ? "bg-blue-500 text-white"
+                  : "bg-green-500 text-white"
+              }
+            `}
+          >
+            Nivel {parsed.triage}
+          </span>
+        ) : (
+          <p className="text-health-text-muted mt-2">No registrado</p>
+        )}
+      </div>
+
+                {/* ANAMNESIS */}
+
           <div className="mb-6">
             <h3 className="text-sm text-health-text-muted font-semibold uppercase tracking-wide">
               Anamnesis
