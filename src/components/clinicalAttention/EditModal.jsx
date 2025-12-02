@@ -1,4 +1,4 @@
-import { useEffect, useState, useMemo } from "react";
+import { useEffect, useState } from "react";
 import { apiClient } from "../../modules/api";
 
 export default function EditModal({
@@ -172,7 +172,7 @@ ${diagnostico}
           <h2 className="text-lg font-semibold text-white tracking-wide">
             Editar Atención Clínica
           </h2>
-          
+
           <button
             onClick={onClose}
             className="text-white/50 hover:text-white transition"
@@ -183,19 +183,18 @@ ${diagnostico}
 
         <form onSubmit={handleSubmit} className="p-6 space-y-6 overflow-y-auto">
           {/* ID EPISODIO */}
-<div>
-  <label className="block text-sm font-medium text-white/70 mb-2">
-    ID Episodio
-  </label>
-  <input
-    value={idEpisode}
-    onChange={(e) => setIdEpisode(e.target.value)}
-    className="w-full bg-[#0f1220] border border-white/10 rounded-lg px-4 py-2 text-white focus:ring-2 focus:ring-health-accent outline-none transition-all shadow-inner"
-  />
-  <p className="text-xs text-white/40 mt-1">
-  </p>
-</div>
-
+          <div>
+            <label className="block text-sm font-medium text-white/70 mb-2">
+              ID Episodio
+            </label>
+            <input
+              value={idEpisode}
+              onChange={(e) => setIdEpisode(e.target.value)}
+              className="w-full bg-[#0f1220] border border-white/10 rounded-lg px-4 py-2 text-white focus:ring-2 focus:ring-health-accent outline-none transition-all shadow-inner"
+            />
+            <p className="text-xs text-white/40 mt-1">
+            </p>
+          </div>
 
 
           {/* ANAMNESIS */}

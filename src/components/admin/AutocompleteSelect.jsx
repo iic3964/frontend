@@ -1,10 +1,10 @@
-import { useState, useRef, useEffect } from "react";
+import { useEffect, useRef, useState } from "react";
 
 export default function AutocompleteSelect({
   value,
   onChange,
   options,
-  placeholder = "Seleccione aseguradora...",
+  placeholder = "Selecciona una opción...",
 }) {
   const [query, setQuery] = useState("");
   const [open, setOpen] = useState(false);
@@ -35,21 +35,39 @@ export default function AutocompleteSelect({
   return (
     <div ref={containerRef} className="relative">
       {/* Input Visible */}
-      <input
-        type="text"
-        className="w-full bg-white border border-health-border rounded p-2 text-health-text"
-        placeholder={placeholder}
-        value={
-          open ? query : selectedInsurance
-            ? selectedInsurance.nombre_comercial || selectedInsurance.nombre_juridico
-            : ""
-        }
-        onChange={(e) => {
-          setQuery(e.target.value);
-          setOpen(true);
-        }}
-        onFocus={() => setOpen(true)}
-      />
+      <div className="relative">
+        <input
+          type="text"
+          className="w-full bg-white border border-health-border rounded p-2 pr-10 text-health-text"
+          placeholder={placeholder}
+          value={
+            open ? query : selectedInsurance
+              ? selectedInsurance.nombre_comercial || selectedInsurance.nombre_juridico
+              : ""
+          }
+          onChange={(e) => {
+            setQuery(e.target.value);
+            setOpen(true);
+          }}
+          onFocus={() => setOpen(true)}
+        />
+        {/* Dropdown Arrow Icon */}
+        <div className="pointer-events-none absolute inset-y-0 right-0 flex items-center px-3 text-health-text-muted">
+          <svg
+            className="h-4 w-4"
+            fill="none"
+            viewBox="0 0 24 24"
+            stroke="currentColor"
+          >
+            <path
+              strokeLinecap="round"
+              strokeLinejoin="round"
+              strokeWidth="2"
+              d="M19 9l-7 7-7-7"
+            />
+          </svg>
+        </div>
+      </div>
 
       {/* Dropdown */}
       {open && (

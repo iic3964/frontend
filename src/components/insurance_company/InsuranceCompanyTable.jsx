@@ -93,7 +93,7 @@ export default function InsuranceCompanyTable() {
       value={selectedCompany}
       onChange={(id) => setSelectedCompany(id)}
       options={companies}
-      placeholder="Seleccione aseguradora…"
+      placeholder="Selecciona una aseguradora..."
     />
   </div>
 
@@ -164,9 +164,9 @@ export default function InsuranceCompanyTable() {
 
                 <td className="px-4 py-3">{c.nombre_juridico}</td>
 
-                <td className="px-4 py-3">{c.rut || "—"}</td>
+                <td className="px-4 py-3 whitespace-nowrap">{c.rut || "—"}</td>
 
-                <td className="px-4 py-3 text-right">
+                <td className="px-4 py-3 text-right whitespace-nowrap">
                   <a
                     href={`/aseguradora/details/${c.id}`}
                     className="text-health-accent hover:underline"

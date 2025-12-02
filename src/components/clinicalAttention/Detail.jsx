@@ -57,7 +57,7 @@ const DoctorCard = ({
   colorClass,
 }) => {
   return (
-    <div className="group relative flex items-center gap-4 p-3 bg-white/5 rounded-xl border border-white/5 overflow-hidden transition-all hover:bg-white/10 hover:border-white/20 h-20">
+    <div className="group relative flex items-center gap-4 p-3 bg-gray-50 rounded-xl border border-health-border overflow-hidden transition-all hover:bg-gray-100 h-20">
       {/* Avatar (Siempre visible) */}
       <div
         className={`w-10 h-10 flex-shrink-0 rounded-full ${colorClass} flex items-center justify-center font-bold z-10 shadow-lg`}
@@ -69,10 +69,10 @@ const DoctorCard = ({
       <div className="flex-1 relative h-full flex flex-col justify-center overflow-hidden">
         {/* VISTA NORMAL: Rol y Nombre */}
         <div className="absolute w-full transition-all duration-300 transform group-hover:-translate-y-12 group-hover:opacity-0 flex flex-col justify-center">
-          <p className="text-xs text-white/50 uppercase tracking-wide font-semibold">
+          <p className="text-xs text-health-text-muted uppercase tracking-wide font-semibold">
             {title}
           </p>
-          <p className="text-white font-medium truncate">
+          <p className="text-health-text font-medium truncate">
             {firstName} {lastName}
           </p>
         </div>
@@ -94,7 +94,7 @@ const DoctorCard = ({
           </div>
 
           {/* Teléfono con Icono SVG */}
-          <div className="flex items-center gap-2 text-xs text-white/70 truncate">
+          <div className="flex items-center gap-2 text-xs text-health-text-muted truncate">
             <svg
               xmlns="http://www.w3.org/2000/svg"
               viewBox="0 0 24 24"
@@ -259,7 +259,7 @@ export default function ClinicalAttentionDetail({ attentionId }) {
       <div className="flex items-center justify-center py-20">
         <div className="flex flex-col items-center gap-3">
           <div className="w-8 h-8 border-4 border-health-accent border-t-transparent rounded-full animate-spin"></div>
-          <span className="text-white/50 text-sm">Cargando información...</span>
+          <span className="text-health-text-muted text-sm">Cargando información...</span>
         </div>
       </div>
     );
@@ -268,12 +268,12 @@ export default function ClinicalAttentionDetail({ attentionId }) {
   if (error || !clinicalAttention) {
     return (
       <div className="flex flex-col items-center justify-center py-20 gap-4">
-        <div className="text-red-400 bg-red-500/10 px-4 py-2 rounded-lg border border-red-500/20">
+        <div className="text-red-600 bg-red-50 px-4 py-2 rounded-lg border border-red-200">
           {error || "No se encontraron datos"}
         </div>
         <a
           href="/clinical_attentions"
-          className="text-health-accent hover:underline text-sm"
+          className="text-health-accent hover:underline text-sm font-medium"
         >
           ← Volver a lista de atenciones
         </a>
@@ -313,10 +313,10 @@ export default function ClinicalAttentionDetail({ attentionId }) {
           </svg>
           Volver a lista
         </a>
-        <div className="text-white/60 text-sm font-mono bg-white/5 px-3 py-1 rounded-md border border-white/10">
+        <div className="text-health-text text-sm font-mono bg-gray-50 px-3 py-1 rounded-md border border-health-border">
           ID Episodio:{" "}
           <span className="text-health-accent font-semibold">
-            {clinicalAttention?.id_episodio || clinicalAttention?.id}
+            {clinicalAttention?.id_episodio || "-"}
           </span>
         </div>
 
@@ -324,13 +324,13 @@ export default function ClinicalAttentionDetail({ attentionId }) {
           <div className="flex gap-3">
             <button
               onClick={() => setShowEditModal(true)}
-              className="rounded-lg bg-health-accent text-black px-4 py-2 text-sm font-medium hover:bg-health-accent-dark transition shadow-lg shadow-health-accent/10 flex items-center gap-2"
+              className="rounded-lg bg-health-accent text-white px-4 py-2 text-sm font-medium hover:bg-health-accent-dark transition shadow-lg flex items-center gap-2"
             >
               Editar
             </button>
             <button
               onClick={() => setShowDeleteModal(true)}
-              className="rounded-lg bg-red-500 text-white px-4 py-2 text-sm font-medium hover:bg-red-600 transition shadow-lg shadow-red-500/10 flex items-center gap-2"
+              className="rounded-lg bg-red-500 text-white px-4 py-2 text-sm font-medium hover:bg-red-600 transition shadow-lg flex items-center gap-2"
             >
               Eliminar
             </button>
@@ -345,35 +345,35 @@ export default function ClinicalAttentionDetail({ attentionId }) {
 
       <div className="grid gap-6 md:grid-cols-2 items-stretch">
         {/* COLUMNA 1: DATOS PACIENTE */}
-        <div className="bg-white/5 p-5 rounded-xl border border-white/10 shadow-xl backdrop-blur-md h-full flex flex-col">
+        <div className="bg-white p-5 rounded-xl border border-health-border shadow-xl h-full flex flex-col">
           <h2 className="text-lg font-semibold mb-4 text-health-accent">
             Datos del Paciente
           </h2>
-          <ul className="space-y-2 text-white/80 flex-1">
+          <ul className="space-y-2 text-health-text flex-1">
             <li>
-              <span className="text-white/50">Nombre:</span>{" "}
+              <span className="text-health-text-muted">Nombre:</span>{" "}
               {ca.patient.first_name} {ca.patient.last_name}
             </li>
             <li>
-              <span className="text-white/50">RUT:</span> {ca.patient.rut}
+              <span className="text-health-text-muted">RUT:</span> {ca.patient.rut}
             </li>
             <li>
-              <span className="text-white/50">Teléfono:</span>{" "}
+              <span className="text-health-text-muted">Teléfono:</span>{" "}
               {ca.patient.phone || "N/A"}
             </li>
             <li>
-              <span className="text-white/50">Dirección:</span>{" "}
+              <span className="text-health-text-muted">Dirección:</span>{" "}
               {ca.patient.address || "N/A"}
             </li>
             <li>
-              <span className="text-white/50">Ciudad:</span>{" "}
+              <span className="text-health-text-muted">Ciudad:</span>{" "}
               {ca.patient.city || "N/A"}
             </li>
           </ul>
         </div>
 
         {/* COLUMNA 2: EQUIPO MÉDICO */}
-        <div className="bg-white/5 p-5 rounded-xl border border-white/10 shadow-xl backdrop-blur-md h-full flex flex-col">
+        <div className="bg-white p-5 rounded-xl border border-health-border shadow-xl h-full flex flex-col">
           <h2 className="text-lg font-semibold mb-4 text-health-accent flex items-center gap-2">
             Equipo Médico
           </h2>
@@ -403,7 +403,7 @@ export default function ClinicalAttentionDetail({ attentionId }) {
           </div>
 
           <div className="px-1 text-right mt-4">
-            <div className="text-xs text-white/30 space-y-1">
+            <div className="text-xs text-health-text-muted space-y-1">
               <p>Creado: {formatDate(ca.created_at)}</p>
               <p>Última act.: {formatDate(ca.updated_at)}</p>
             </div>
@@ -418,24 +418,24 @@ export default function ClinicalAttentionDetail({ attentionId }) {
 
       <div className="grid gap-6 md:grid-cols-2 items-start">
         {/* COLUMNA 1: INFORMACIÓN CLÍNICA */}
-        <div className="bg-white/5 p-5 rounded-xl border border-white/10 shadow-xl backdrop-blur-md h-full">
+        <div className="bg-white p-5 rounded-xl border border-health-border shadow-xl backdrop-blur-md h-full">
           <h2 className="text-lg font-semibold mb-4 text-health-accent">
             Información Clínica
           </h2>
 
           {/* ANAMNESIS */}
           <div className="mb-6">
-            <h3 className="text-sm text-white/60 font-semibold uppercase tracking-wide">
+            <h3 className="text-sm text-health-text-muted font-semibold uppercase tracking-wide">
               Anamnesis
             </h3>
-            <p className="text-white/80 mt-2 leading-relaxed whitespace-pre-line">
+            <p className="text-health-text mt-2 leading-relaxed whitespace-pre-line">
               {parsed?.anamnesis || "N/A"}
             </p>
           </div>
 
           {/* SIGNOS VITALES */}
           <div className="mb-6">
-            <h3 className="text-sm text-white/60 font-semibold uppercase tracking-wide">
+            <h3 className="text-sm text-health-text-muted font-semibold uppercase tracking-wide">
               Signos Vitales
             </h3>
             {parsed?.signosVitales &&
@@ -444,61 +444,61 @@ export default function ClinicalAttentionDetail({ attentionId }) {
                 {Object.entries(parsed.signosVitales).map(([k, v]) => (
                   <div
                     key={k}
-                    className="flex flex-col bg-black/20 border border-white/10 rounded-lg p-3"
+                    className="flex flex-col bg-gray-50 border border-health-border rounded-lg p-3"
                   >
-                    <span className="text-xs text-white/50">{k}</span>
-                    <span className="text-white/90 font-medium mt-1">{v}</span>
+                    <span className="text-xs text-health-text-muted">{k}</span>
+                    <span className="text-health-text font-medium mt-1">{v}</span>
                   </div>
                 ))}
               </div>
             ) : (
-              <p className="text-white/40 mt-2">No registrados</p>
+              <p className="text-health-text-muted mt-2">No registrados</p>
             )}
           </div>
 
           {/* HALLAZGOS */}
           <div className="mb-6">
-            <h3 className="text-sm text-white/60 font-semibold uppercase tracking-wide">
+            <h3 className="text-sm text-health-text-muted font-semibold uppercase tracking-wide">
               Hallazgos Clínicos
             </h3>
-            <p className="text-white/80 mt-2 leading-relaxed whitespace-pre-line">
+            <p className="text-health-text mt-2 leading-relaxed whitespace-pre-line">
               {parsed?.hallazgos || "N/A"}
             </p>
           </div>
 
           {/* DIAGNÓSTICO */}
           <div>
-            <h3 className="text-sm text-white/60 font-semibold uppercase tracking-wide">
+            <h3 className="text-sm text-health-text-muted font-semibold uppercase tracking-wide">
               Diagnóstico Presuntivo
             </h3>
-            <p className="text-white/80 mt-2 leading-relaxed whitespace-pre-line">
+            <p className="text-health-text mt-2 leading-relaxed whitespace-pre-line">
               {parsed?.diagnostico || ca.diagnostic}
             </p>
           </div>
         </div>
 
         {/* COLUMNA 2: ANÁLISIS IA */}
-        <div className="bg-white/5 p-5 rounded-xl border border-white/10 shadow-xl backdrop-blur-md h-full">
+        <div className="bg-white p-5 rounded-xl border border-health-border shadow-xl backdrop-blur-md h-full">
           <h2 className="text-lg font-semibold mb-4 text-health-accent">
             Análisis IA
           </h2>
 
-          <ul className="space-y-3 text-white/80">
+          <ul className="space-y-3 text-health-text">
             <li>
-              <span className="text-white/50">Ley de Urgencia:</span>
+              <span className="text-health-text-muted">Ley de Urgencia:</span>
 
               {isUpdating ? (
-                <span className="ml-2 text-white/40 italic text-xs">
+                <span className="ml-2 text-health-text-muted italic text-xs">
                   Cargando...
                 </span>
               ) : (
                 <span
                   className={`ml-2 rounded-md px-2 py-0.5 text-xs ${
                     ca.applies_urgency_law === true
-                      ? "bg-health-ok/20 text-health-ok"
+                      ? "bg-green-50 text-green-600"
                       : ca.applies_urgency_law === false
-                      ? "bg-red-500/20 text-red-400"
-                      : "bg-white/10 text-white/70"
+                      ? "bg-red-50 text-red-600"
+                      : "bg-gray-100 text-gray-600"
                   }`}
                 >
                   {ca.applies_urgency_law === true
@@ -511,20 +511,20 @@ export default function ClinicalAttentionDetail({ attentionId }) {
             </li>
 
             <li>
-              <span className="text-white/50">Resultado IA:</span>
+              <span className="text-health-text-muted">Resultado IA:</span>
 
               {isUpdating ? (
-                <span className="ml-2 text-white/40 italic text-xs">
+                <span className="ml-2 text-health-text-muted italic text-xs">
                   Cargando...
                 </span>
               ) : (
                 <span
                   className={`ml-2 rounded-md px-2 py-0.5 text-xs ${
                     ca.ai_result === true
-                      ? "bg-health-ok/20 text-health-ok"
+                      ? "bg-green-50 text-green-600"
                       : ca.ai_result === false
-                      ? "bg-red-500/20 text-red-400"
-                      : "bg-white/10 text-white/70"
+                      ? "bg-red-50 text-red-600"
+                      : "bg-gray-100 text-gray-600"
                   }`}
                 >
                   {ca.ai_result === true
@@ -537,16 +537,16 @@ export default function ClinicalAttentionDetail({ attentionId }) {
             </li>
 
             {(ca.ai_result === null || isUpdating) && (
-              <li className="flex items-center gap-2 text-white/70 mt-2">
-                <div className="animate-spin h-4 w-4 border-2 border-white/30 border-t-white rounded-full"></div>
+              <li className="flex items-center gap-2 text-health-text-muted mt-2">
+                <div className="animate-spin h-4 w-4 border-2 border-gray-300 border-t-health-accent rounded-full"></div>
                 <span>Procesando diagnóstico...</span>
               </li>
             )}
 
             <li>
-              <span className="text-white/50">Confianza IA:</span>
+              <span className="text-health-text-muted">Confianza IA:</span>
               {isUpdating ? (
-                <span className="ml-2 text-white/40 italic text-xs">
+                <span className="ml-2 text-health-text-muted italic text-xs">
                   Cargando...
                 </span>
               ) : ca.ai_confidence !== null ? (
@@ -560,14 +560,14 @@ export default function ClinicalAttentionDetail({ attentionId }) {
                   {(ca.ai_confidence * 100).toFixed(0)}%
                 </span>
               ) : (
-                <span className="ml-2 text-white/40">N/A</span>
+                <span className="ml-2 text-health-text-muted">N/A</span>
               )}
             </li>
 
             <li>
-              <span className="text-white/50">Razón IA:</span>{" "}
+              <span className="text-health-text-muted">Razón IA:</span>{" "}
               {isUpdating ? (
-                <span className="text-white/40 italic">Cargando...</span>
+                <span className="text-health-text-muted italic">Cargando...</span>
               ) : (
                 ca.ai_reason || "N/A"
               )}
@@ -576,19 +576,19 @@ export default function ClinicalAttentionDetail({ attentionId }) {
 
           {/* APROBACIÓN MÉDICA */}
           {canEdit && ca.medic_approved === null && !isUpdating && (
-            <div className="mt-6 bg-black/20 border border-white/10 p-4 rounded-xl">
-              <h3 className="text-white text-md font-semibold mb-3">
+            <div className="mt-6 bg-gray-50 border border-health-border p-4 rounded-xl">
+              <h3 className="text-health-text text-md font-semibold mb-3">
                 Aprobación del Médico
               </h3>
 
               {rejectMode ? (
                 <>
                   <div className="mb-3">
-                    <label className="text-white/50 text-sm">
+                    <label className="text-health-text-muted text-sm">
                       Razón del rechazo
                     </label>
                     <textarea
-                      className="w-full mt-1 p-2 bg-black/40 border border-white/10 rounded-lg text-white"
+                      className="w-full mt-1 p-2 bg-white border border-health-border rounded-lg text-health-text"
                       rows={2}
                       value={approvalReason}
                       onChange={(e) => setApprovalReason(e.target.value)}
@@ -616,14 +616,14 @@ export default function ClinicalAttentionDetail({ attentionId }) {
                 <div className="flex gap-3">
                   <button
                     onClick={() => handleMedicApproval(true)}
-                    className="bg-green-600/30 text-green-400 px-4 py-2 rounded-lg hover:bg-green-600/50 transition"
+                    className="bg-green-50 text-green-600 px-4 py-2 rounded-lg hover:bg-green-100 transition border border-green-200"
                   >
                     Aprobar resultado IA
                   </button>
 
                   <button
                     onClick={() => setRejectMode(true)}
-                    className="bg-red-600/30 text-red-400 px-4 py-2 rounded-lg hover:bg-red-600/50 transition"
+                    className="bg-red-50 text-red-600 px-4 py-2 rounded-lg hover:bg-red-100 transition border border-red-200"
                   >
                     Rechazar resultado IA
                   </button>
@@ -663,12 +663,12 @@ export default function ClinicalAttentionDetail({ attentionId }) {
                 Atención Sobrescrita
               </h3>
 
-              <p className="text-white/80 whitespace-pre-line text-sm mb-3">
+              <p className="text-health-text whitespace-pre-line text-sm mb-3">
                 {ca.overwritten_reason}
               </p>
 
               {ca.overwritten_by && (
-                <div className="text-white/60 text-xs">
+                <div className="text-health-text-muted text-xs">
                   <span className="font-semibold text-yellow-300">
                     Sobrescrito por:
                   </span>{" "}

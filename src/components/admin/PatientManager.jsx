@@ -269,17 +269,17 @@ const PatientManager = () => {
             </div>
 
             {/* Aseguradora (Dropdown) */}
-           <div>
-  <label className="block text-sm text-health-text-muted mb-1">Aseguradora</label>
-  <AutocompleteSelect
-    value={formData.insurance_company_id}
-    onChange={(val) =>
-      setFormData((prev) => ({ ...prev, insurance_company_id: val }))
-    }
-    options={insuranceCompanies}
-    placeholder="Seleccione aseguradora..."
-  />
-</div>
+            <div>
+              <label className="block text-sm text-health-text-muted mb-1">Aseguradora</label>
+              <AutocompleteSelect
+                value={formData.insurance_company_id}
+                onChange={(val) =>
+                  setFormData((prev) => ({ ...prev, insurance_company_id: val }))
+                }
+                options={insuranceCompanies}
+                placeholder="Selecciona una aseguradora..."
+              />
+            </div>
 
 
 

@@ -1,4 +1,4 @@
-import React, { useState, useEffect } from "react";
+import { useEffect, useState } from "react";
 import { apiClient } from "../../modules/api";
 
 const UserManager = () => {
@@ -7,7 +7,7 @@ const UserManager = () => {
   const [loading, setLoading] = useState(false);
   const [error, setError] = useState(null);
   const [searchQuery, setSearchQuery] = useState("");
-  
+
   // Selected user for editing
   const [selectedUser, setSelectedUser] = useState(null);
 
@@ -34,7 +34,7 @@ const UserManager = () => {
         const residents = (resp.data.resident || []).map(u => ({ ...u, role: 'resident' }));
         const supervisors = (resp.data.supervisor || []).map(u => ({ ...u, role: 'supervisor' }));
         // Note: If you have an endpoint for admins, fetch and add them here too.
-        
+
         setUsers([...supervisors, ...residents]);
       } else {
         setError(resp.error || "Failed to load users");
@@ -86,12 +86,12 @@ const UserManager = () => {
         if (!resp.success) throw new Error(resp.error);
       } else {
         // Update logic (excluding password)
-        const { password, ...updatePayload } = formData; 
+        const { password, ...updatePayload } = formData;
         const resp = await apiClient.updateDoctor(selectedUser.id, updatePayload);
         if (!resp.success) throw new Error(resp.error);
       }
-      
-      await loadUsers(); 
+
+      await loadUsers();
       setView("list");
     } catch (err) {
       setError(err.message || "Error saving user");
@@ -118,7 +118,7 @@ const UserManager = () => {
         <h2 className="text-2xl font-bold">
           {view === "list" ? "Gestión de Usuarios" : view === "create" ? "Nuevo Usuario" : "Editar Usuario"}
         </h2>
-        
+
         <div className="flex gap-3">
             {view === "list" && (
                 <button
@@ -205,7 +205,7 @@ const UserManager = () => {
       {(view === "create" || view === "edit") && (
         <form onSubmit={handleSubmit} className="max-w-2xl mx-auto">
           <div className="grid grid-cols-1 gap-4 mb-6">
-            
+
             <div className="grid grid-cols-2 gap-4">
                 <div>
                     <label className="block text-sm text-health-text-muted mb-1">Nombre</label>
@@ -223,27 +223,27 @@ const UserManager = () => {
             </div>
 
             {view === "create" && (
-                <div>
+              <div>
                 <label className="block text-sm text-health-text-muted mb-1">Contraseña</label>
                 <input type="password" name="password" value={formData.password} onChange={handleInputChange} className="w-full bg-white border border-health-border rounded p-2 text-health-text" required />
                 <p className="text-xs text-health-text-muted mt-1">La contraseña es requerida para crear el usuario.</p>
-                </div>
+              </div>
             )}
 
             <div>
-                <label className="block text-sm text-health-text-muted mb-1">Rol</label>
-                <select name="role" value={formData.role} onChange={handleInputChange} className="w-full bg-white border border-health-border rounded p-2 text-health-text">
-                    <option value="resident">Médico Residente</option>
-                    <option value="supervisor">Médico Jefe</option>
-                    <option value="admin">Jefe de Servicio (Admin)</option>
-                </select>
+              <label className="block text-sm text-health-text-muted mb-1">Rol</label>
+              <select name="role" value={formData.role} onChange={handleInputChange} className="w-full bg-white border border-health-border rounded p-2 text-health-text h-10">
+                <option value="resident">Médico Residente</option>
+                <option value="supervisor">Médico Jefe</option>
+                <option value="admin">Jefe de Servicio (Admin)</option>
+              </select>
             </div>
           </div>
 
           <div className="flex justify-end gap-3 mb-8">
             <button type="button" onClick={() => setView("list")} className="px-4 py-2 rounded text-health-text-muted hover:bg-gray-100 cursor-pointer">Cancelar</button>
             <button type="submit" className="px-6 py-2 rounded bg-health-secondary hover:bg-purple-700 text-white font-medium cursor-pointer">
-                {view === "create" ? "Crear Usuario" : "Guardar Cambios"}
+              {view === "create" ? "Crear Usuario" : "Guardar Cambios"}
             </button>
           </div>
         </form>

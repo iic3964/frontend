@@ -1,9 +1,9 @@
-import React, { useState, useEffect } from 'react';
+import React, { useEffect, useState } from 'react';
 import { getAllUsersMetrics, getTeamMetrics } from './mockMetricsData.js';
 
 /**
  * AllUsersMetricsTable - Tabla completa de métricas de todos los usuarios
- * 
+ *
  * Solo visible para supervisores y admins.
  * Muestra una tabla con las métricas de todos los médicos del equipo.
  */
@@ -17,7 +17,7 @@ export default function AllUsersMetricsTable() {
     // Cargar todas las métricas
     const metrics = getAllUsersMetrics();
     setAllMetrics(metrics);
-    
+
     // Cargar métricas del equipo
     const team = getTeamMetrics();
     setTeamMetrics(team);
@@ -39,7 +39,7 @@ export default function AllUsersMetricsTable() {
     // Filtrar por búsqueda
     if (searchQuery) {
       const query = searchQuery.toLowerCase();
-      filtered = filtered.filter(user => 
+      filtered = filtered.filter(user =>
         user.nombre.toLowerCase().includes(query)
       );
     }
@@ -56,8 +56,8 @@ export default function AllUsersMetricsTable() {
 
       // Para ordenamiento de strings
       if (typeof aValue === 'string' && typeof bValue === 'string') {
-        return sortConfig.direction === 'asc' 
-          ? aValue.localeCompare(bValue) 
+        return sortConfig.direction === 'asc'
+          ? aValue.localeCompare(bValue)
           : bValue.localeCompare(aValue);
       }
 
@@ -93,7 +93,7 @@ export default function AllUsersMetricsTable() {
           <h3 className="text-lg font-semibold text-white mb-4">
             Resumen del Equipo Médico
           </h3>
-          
+
           <div className="grid grid-cols-2 md:grid-cols-4 gap-4">
             <div>
               <p className="text-sm text-white/60 mb-1">Total Usuarios</p>
@@ -132,7 +132,7 @@ export default function AllUsersMetricsTable() {
           <table className="w-full text-sm">
             <thead className="bg-black/30">
               <tr className="text-left text-white/80">
-                <th 
+                <th
                   className="px-4 py-3 cursor-pointer hover:bg-white/5 transition whitespace-nowrap"
                   onClick={() => handleSort('nombre')}
                 >
@@ -141,7 +141,7 @@ export default function AllUsersMetricsTable() {
                     <span className="text-xs">{renderSortIcon('nombre')}</span>
                   </div>
                 </th>
-                <th 
+                <th
                   className="px-4 py-3 cursor-pointer hover:bg-white/5 transition whitespace-nowrap"
                   onClick={() => handleSort('rol')}
                 >
@@ -150,7 +150,7 @@ export default function AllUsersMetricsTable() {
                     <span className="text-xs">{renderSortIcon('rol')}</span>
                   </div>
                 </th>
-                <th 
+                <th
                   className="px-4 py-3 cursor-pointer hover:bg-white/5 transition whitespace-nowrap text-center"
                   onClick={() => handleSort('episodiosSubidos')}
                 >
@@ -159,7 +159,7 @@ export default function AllUsersMetricsTable() {
                     <span className="text-xs">{renderSortIcon('episodiosSubidos')}</span>
                   </div>
                 </th>
-                <th 
+                <th
                   className="px-4 py-3 cursor-pointer hover:bg-white/5 transition whitespace-nowrap text-center"
                   onClick={() => handleSort('pctRechazosSupervisor')}
                 >
@@ -168,7 +168,7 @@ export default function AllUsersMetricsTable() {
                     <span className="text-xs">{renderSortIcon('pctRechazosSupervisor')}</span>
                   </div>
                 </th>
-                <th 
+                <th
                   className="px-4 py-3 cursor-pointer hover:bg-white/5 transition whitespace-nowrap text-center"
                   onClick={() => handleSort('pctRechazosAseguradora')}
                 >
@@ -177,7 +177,7 @@ export default function AllUsersMetricsTable() {
                     <span className="text-xs">{renderSortIcon('pctRechazosAseguradora')}</span>
                   </div>
                 </th>
-                <th 
+                <th
                   className="px-4 py-3 cursor-pointer hover:bg-white/5 transition whitespace-nowrap text-center"
                   onClick={() => handleSort('casosDisputables')}
                 >
@@ -193,28 +193,28 @@ export default function AllUsersMetricsTable() {
               {filteredAndSortedMetrics.length > 0 ? (
                 filteredAndSortedMetrics.map((user) => {
                   const roleBadge = getRoleBadge(user.rol);
-                  
+
                   return (
                     <tr key={user.userId} className="hover:bg-white/5 transition">
                       <td className="px-4 py-3 whitespace-nowrap font-medium text-white">
                         {user.nombre}
                       </td>
-                      
+
                       <td className="px-4 py-3 whitespace-nowrap">
                         <span className={`px-2 py-1 rounded text-xs font-semibold ${roleBadge.bg} ${roleBadge.text}`}>
                           {roleBadge.label}
                         </span>
                       </td>
-                      
+
                       <td className="px-4 py-3 text-center whitespace-nowrap text-white">
                         {user.episodiosSubidos}
                       </td>
-                      
+
                       <td className="px-4 py-3 text-center whitespace-nowrap">
                         <div className="flex flex-col items-center">
                           <span className={`font-semibold ${
-                            user.pctRechazosSupervisor < 10 ? 'text-green-400' : 
-                            user.pctRechazosSupervisor < 20 ? 'text-amber-400' : 
+                            user.pctRechazosSupervisor < 10 ? 'text-green-400' :
+                            user.pctRechazosSupervisor < 20 ? 'text-amber-400' :
                             'text-red-400'
                           }`}>
                             {user.pctRechazosSupervisor}%
@@ -224,12 +224,12 @@ export default function AllUsersMetricsTable() {
                           </span>
                         </div>
                       </td>
-                      
+
                       <td className="px-4 py-3 text-center whitespace-nowrap">
                         <div className="flex flex-col items-center">
                           <span className={`font-semibold ${
-                            user.pctRechazosAseguradora < 15 ? 'text-green-400' : 
-                            user.pctRechazosAseguradora < 25 ? 'text-amber-400' : 
+                            user.pctRechazosAseguradora < 15 ? 'text-green-400' :
+                            user.pctRechazosAseguradora < 25 ? 'text-amber-400' :
                             'text-red-400'
                           }`}>
                             {user.pctRechazosAseguradora}%
@@ -239,7 +239,7 @@ export default function AllUsersMetricsTable() {
                           </span>
                         </div>
                       </td>
-                      
+
                       <td className="px-4 py-3 text-center whitespace-nowrap">
                         <span className={`px-2 py-1 rounded-lg font-bold ${
                           user.casosDisputables > 6 ? 'bg-health-accent/20 text-health-accent' :
@@ -283,4 +283,3 @@ export default function AllUsersMetricsTable() {
     </div>
   );
 }
-

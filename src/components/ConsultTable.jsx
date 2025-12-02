@@ -121,23 +121,26 @@ export default function ConsultTable() {
         <table className="w-full text-sm">
           <thead className="bg-gray-50">
             <tr className="[&>th]:px-4 [&>th]:py-3 text-left text-health-text [&>th]:whitespace-nowrap">
-              <th>Fecha de creación</th>
-              <th>ID Episodio</th>
+              <th>Fecha</th>
+              <th># Episodio</th>
               <th>Nombre Paciente</th>
               <th>RUT</th>
-              <th>Médico Residente</th>
-              <th>Médico Supervisor</th>
-              <th>Aprobado Por Medico</th>
               <th>Ley Urgencia</th>
-              <th>Resultado IA</th>
-              <th>Ultima actualización</th>
+              <th>Análisis IA</th>
+              <th>Validación Médico</th>
+              <th>Validación Supervisor</th>
+              <th>Médico Residente</th>
+              <th>Supervisor</th>
               <th></th>
             </tr>
           </thead>
 
           <tbody className="divide-y divide-health-border bg-white">
             {clinicalAttentions.map((r) => {
-              const isEditing = editingId === r.id;
+              const isPendingUrgencyLaw = r.ai_result !== true && r.ai_result !== false;
+              const doesUrgencyLawApply = (r.ai_result === true && r.medic_approved === false) || (
+                r.ai_result === false && r.medic_approved === true
+              );
 
               return (
                 <tr key={r.id} className="hover:bg-gray-50 text-health-text">
@@ -145,8 +148,8 @@ export default function ConsultTable() {
                     {formatDate(r.created_at)}
                   </td>
 
-                  <td className="px-4 py-3 whitespace-nowrap">
-                    {r.id_episodio ? r.id_episodio : r.id}
+                  <td className="px-4 py-3 whitespace-nowrap max-w-[150px] overflow-hidden text-ellipsis">
+                    {r.id_episodio ? r.id_episodio : "-"}
                   </td>
 
 
@@ -159,6 +162,58 @@ export default function ConsultTable() {
                   </td>
 
                   <td className="px-4 py-3 whitespace-nowrap">
+                    <span
+                      className={`rounded-md px-2 py-1 text-xs ${
+                        isPendingUrgencyLaw
+                          ? "bg-gray-100 text-gray-600"
+                          : doesUrgencyLawApply
+                            ? "bg-green-100 text-green-700"
+                            : "bg-red-100 text-red-700"
+                      }`}
+                    >
+                      {
+                        isPendingUrgencyLaw
+                          ? "Pendiente"
+                          : doesUrgencyLawApply
+                            ? "Aplica"
+                            : "No aplica"
+                      }
+                    </span>
+                  </td>
+
+                  <td className="px-4 py-3 whitespace-nowrap">
+                    <span
+                      className={`rounded-md px-2 py-1 text-xs ${
+                        r.applies_urgency_law === true
+                          ? "bg-green-100 text-green-700"
+                          : r.applies_urgency_law === false
+                          ? "bg-red-100 text-red-700"
+                          : "bg-gray-100 text-gray-600"
+                      }`}
+                    >
+                      {r.applies_urgency_law === true
+                        ? "Aplica"
+                        : r.applies_urgency_law === false
+                        ? "No aplica"
+                        : "Pendiente"}
+                    </span>
+                  </td>
+
+                  <td className="px-4 py-3 whitespace-nowrap">
+                    Por implementar
+                  </td>
+
+                  <td className="px-4 py-3 whitespace-nowrap">
+                    <span
+                      className={`rounded-md px-2 py-1 text-xs ${
+                        r.ai_result && r.medic_approved === false ? "bg-red-100 text-red-700" : "bg-gray-100 text-gray-600"
+                      }`}
+                    >
+                      {r.ai_result && r.medic_approved === false ? "Objetado" : "-"}
+                    </span>
+                  </td>
+
+                  <td className="px-4 py-3 whitespace-nowrap">
                     {r.resident_doctor.first_name}{" "}
                     {r.resident_doctor.last_name}
                   </td>
@@ -166,107 +221,6 @@ export default function ConsultTable() {
                   <td className="px-4 py-3 whitespace-nowrap">
                     {r.supervisor_doctor.first_name}{" "}
                     {r.supervisor_doctor.last_name}
-                  </td>
-
-                  <td className="px-4 py-3 whitespace-nowrap">
-                    <span
-                      className={`rounded-md px-2 py-1 text-xs ${
-                        r.medic_approved === true
-                          ? "bg-green-100 text-green-700"
-                          : r.medic_approved === false
-                          ? "bg-red-100 text-red-700"
-                          : "bg-gray-100 text-gray-600"
-                      }`}
-                    >
-                      {r.medic_approved === true
-                        ? "Aprobado"
-                        : r.medic_approved === false
-                        ? "Rechazado"
-                        : "Pendiente"}
-                    </span>
-                  </td>
-
-                  <td className="px-4 py-3 whitespace-nowrap">
-                    {isEditing ? (
-                      <div className="flex items-center gap-2">
-                        <select
-                          className="rounded bg-white border border-health-border text-xs px-1 py-1 text-health-text outline-none focus:ring-1 focus:ring-health-accent"
-                          value={
-                            tempUrgencyLaw === null ? "" : String(tempUrgencyLaw)
-                          }
-                          onChange={(e) => {
-                            const val = e.target.value;
-                            setTempUrgencyLaw(
-                              val === "" ? null : val === "true"
-                            );
-                          }}
-                          disabled={isSaving}
-                        >
-                          <option value="true">Sí</option>
-                          <option value="false">No</option>
-                          <option value="">Pendiente</option>
-                        </select>
-
-                        <button
-                          onClick={() => saveUrgencyLaw(r.id)}
-                          disabled={isSaving}
-                          className="text-green-600 hover:text-green-700 text-xs font-bold"
-                        >
-                          {isSaving ? "..." : "✓"}
-                        </button>
-                        <button
-                          onClick={cancelEditing}
-                          disabled={isSaving}
-                          className="text-red-600 hover:text-red-700 text-xs font-bold"
-                        >
-                          ✕
-                        </button>
-                      </div>
-                    ) : (
-                      <div
-                        onClick={() => startEditing(r)}
-                        className="cursor-pointer hover:opacity-80"
-                        title="Click para editar"
-                      >
-                        <span
-                          className={`rounded-md px-2 py-1 text-xs ${
-                            r.applies_urgency_law === true
-                              ? "bg-green-100 text-green-700"
-                              : r.applies_urgency_law === false
-                              ? "bg-red-100 text-red-700"
-                              : "bg-gray-100 text-gray-600"
-                          }`}
-                        >
-                          {r.applies_urgency_law === true
-                            ? "Sí"
-                            : r.applies_urgency_law === false
-                            ? "No"
-                            : "Pendiente"}
-                        </span>
-                      </div>
-                    )}
-                  </td>
-
-                  <td className="px-4 py-3 whitespace-nowrap">
-                    <span
-                      className={`rounded-md px-2 py-1 text-xs ${
-                        r.ai_result === true
-                          ? "bg-green-100 text-green-700"
-                          : r.ai_result === false
-                          ? "bg-red-100 text-red-700"
-                          : "bg-gray-100 text-gray-600"
-                      }`}
-                    >
-                      {r.ai_result === true
-                        ? "Aplica"
-                        : r.ai_result === false
-                        ? "No Aplica"
-                        : "Pendiente"}
-                    </span>
-                  </td>
-
-                  <td className="px-4 py-3 whitespace-nowrap">
-                    {formatDate(r.updated_at)}
                   </td>
 
                   <td className="px-4 py-3 whitespace-nowrap">
