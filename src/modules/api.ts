@@ -115,6 +115,30 @@ class ApiClient {
     });
   }
 
+  async getUsers(): Promise<ApiResponse<UserWithRole[]>> {
+    return this.request<UserWithRole[]>("/users", {
+      method: "GET",
+    });
+  }
+  
+  async updateUser(
+    id: string,
+    payload: UpdateUserRequest
+  ): Promise<ApiResponse<UserWithRole>> {
+    // Updated to point to the new users endpoint logic
+    return this.request<UserWithRole>(`/users/${id}`, {
+      method: "PATCH",
+      body: JSON.stringify(payload),
+    });
+  }
+
+  async deleteUser(id: string): Promise<ApiResponse<void>> {
+    return this.request<void>(`/users/${id}`, {
+      method: "DELETE",
+    });
+  }
+
+
   // Medics
   async getMedics(): Promise<
     ApiResponse<{ resident: DoctorWithId[]; supervisor: DoctorWithId[] }>
@@ -123,16 +147,6 @@ class ApiClient {
       resident: DoctorWithId[];
       supervisor: DoctorWithId[];
     }>("/doctors/get-doctors");
-  }
-
-  async updateDoctor(
-    id: string,
-    payload: UpdateUserRequest
-  ): Promise<ApiResponse<UserWithRole>> {
-    return this.request<UserWithRole>(`/doctors/${id}`, {
-      method: "PATCH",
-      body: JSON.stringify(payload),
-    });
   }
 
   // Patients

@@ -240,7 +240,7 @@ export default function AuthForm({ mode }) {
         </button>
       </form>
 
-      <p className="text-sm text-center text-health-text-muted pt-2">
+      {/* <p className="text-sm text-center text-health-text-muted pt-2">
         {opposite.text}{" "}
         <a
           href={opposite.link}
@@ -248,7 +248,7 @@ export default function AuthForm({ mode }) {
         >
           {opposite.label}
         </a>
-      </p>
+      </p> */}
     </div>
   );
 }
