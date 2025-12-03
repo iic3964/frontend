@@ -1,6 +1,7 @@
 import { useEffect, useState } from "react";
 import { apiClient } from "../../modules/api";
 import AutocompleteSelect from "../admin/AutocompleteSelect";
+
 const PatientManager = () => {
   const [view, setView] = useState("list"); // 'list', 'create', 'edit', 'episode'
   const [patients, setPatients] = useState([]);
@@ -132,12 +133,29 @@ const PatientManager = () => {
     e.preventDefault();
     setLoading(true);
     try {
+      // --- CLEAN PAYLOAD ---
+      // Convert empty strings to null for numeric fields to avoid 422 errors
+      const payload = { ...formData };
+      
+      const numericFields = ["age", "height", "weight", "insurance_company_id"];
+      numericFields.forEach((field) => {
+        if (payload[field] === "" || payload[field] === undefined) {
+          payload[field] = null;
+        } else {
+          payload[field] = Number(payload[field]);
+        }
+      });
+
+      // Handle Enum or strings that should be null if empty
+      if (payload.sex === "") payload.sex = null;
+      if (payload.mother_last_name === "") payload.mother_last_name = null;
+
       let resp;
 
       if (view === "create") {
-        resp = await apiClient.createPatient(formData);
+        resp = await apiClient.createPatient(payload);
       } else {
-        resp = await apiClient.updatePatient(selectedPatient.id, formData);
+        resp = await apiClient.updatePatient(selectedPatient.id, payload);
       }
 
       if (resp.success) {
@@ -160,6 +178,14 @@ const PatientManager = () => {
     const fullName = `${p.first_name} ${p.last_name} ${p.mother_last_name || ""}`.toLowerCase();
     return fullName.includes(query) || p.rut.toLowerCase().includes(query);
   });
+
+  // --- Helper for Sex Display ---
+  const formatSex = (sex) => {
+    if (!sex) return "N/A";
+    if (sex === "M") return "M";
+    if (sex === "F") return "F";
+    return "N/A";
+  };
 
   // --- Renders ---
 
@@ -231,6 +257,7 @@ const PatientManager = () => {
                 <tr className="border-b border-health-border text-health-text-muted">
                   <th className="p-3">RUT</th>
                   <th className="p-3">Nombre Completo</th>
+                  <th className="p-3">Sexo</th>
                   <th className="p-3">Aseguradora</th>
                   <th className="p-3">Acciones</th>
                 </tr>
@@ -245,6 +272,14 @@ const PatientManager = () => {
                       <td className="p-3">{p.rut}</td>
                       <td className="p-3">
                         {`${p.first_name} ${p.last_name} ${p.mother_last_name || ""}`}
+                      </td>
+                      <td className="p-3">
+                        <span className={`font-medium ${
+                            p.sex === 'M' ? 'text-blue-600' : 
+                            p.sex === 'F' ? 'text-pink-600' : 'text-gray-400'
+                        }`}>
+                            {formatSex(p.sex)}
+                        </span>
                       </td>
                       <td className="p-3">
                         {p.insurance_company?.nombre_comercial ||
@@ -263,7 +298,7 @@ const PatientManager = () => {
                   ))
                 ) : (
                   <tr>
-                    <td colSpan="4" className="p-4 text-center text-health-text-muted">
+                    <td colSpan="5" className="p-4 text-center text-health-text-muted">
                       No se encontraron pacientes.
                     </td>
                   </tr>
@@ -303,8 +338,6 @@ const PatientManager = () => {
                 placeholder="Selecciona una aseguradora..."
               />
             </div>
-
-
 
             {/* Nombre */}
             <div>
@@ -382,6 +415,22 @@ const PatientManager = () => {
                 />
               </div>
             </div>
+
+            {/* Sex Input for Editing/Creating */}
+            <div>
+                <label className="block text-sm text-health-text-muted mb-1">Sexo</label>
+                <select
+                    name="sex"
+                    value={formData.sex}
+                    onChange={handleInputChange}
+                    className="w-full bg-white border border-health-border rounded p-2 text-health-text"
+                >
+                    <option value="">Seleccionar...</option>
+                    <option value="M">Masculino (M)</option>
+                    <option value="F">Femenino (F)</option>
+                </select>
+            </div>
+
           </div>
 
           {/* Buttons */}
