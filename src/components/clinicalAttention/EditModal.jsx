@@ -33,7 +33,7 @@ export default function EditModal({
   // -----------------------------
   useEffect(() => {
     if (!clinicalAttention) return;
-      setIdEpisode(clinicalAttention.id_episodio || "");
+    setIdEpisode(clinicalAttention.id_episodio || "");
 
     if (!clinicalAttention.diagnostic) {
       setAnamnesis("");
@@ -43,7 +43,7 @@ export default function EditModal({
     }
 
     const txt = clinicalAttention.diagnostic;
-    // Intentamos parsear si tiene formato estructurado
+    // Attempt parsing if structured
     if (txt.includes("=====")) {
       const raw = txt
         .split("=====")
@@ -63,7 +63,7 @@ export default function EditModal({
       setMotivoConsulta(getSection("MOTIVO DE CONSULTA"));
       setTriage(getSection("TRIAGE"));
 
-      // signos vitales
+      // Vital signs
       const vitals = getSection("SIGNOS VITALES");
       if (vitals) {
         const updated = {};
@@ -78,19 +78,17 @@ export default function EditModal({
     } else {
       setDiagnostico(txt);
     }
-  }, [clinicalAttention, isOpen]); // Added isOpen to ensure reset when reopening
+  }, [clinicalAttention, isOpen]);
 
   // -----------------------------
   // Build summary TXT
   // -----------------------------
-  // Usamos useCallback o simplemente una función pura para evitar problemas de dependencias,
-  // pero dado que se usa en render y submit, la dejamos como función simple.
   const buildTxt = () => {
-  const signosTxt = Object.entries(signos)
-    .map(([k, v]) => `${k}: ${v}`)
-    .join("\n");
+    const signosTxt = Object.entries(signos)
+      .map(([k, v]) => `${k}: ${v}`)
+      .join("\n");
 
-  return `===== TRIAGE =====
+    return `===== TRIAGE =====
 ${triage}
 
 ===== MOTIVO DE CONSULTA =====
@@ -108,20 +106,21 @@ ${hallazgos}
 ===== DIAGNÓSTICO PRESUNTIVO =====
 ${diagnostico}
 `;
-};
-
+  };
 
   // -----------------------------
-  // DIRTY CHECK (Validar cambios)
+  // DIRTY CHECK
   // -----------------------------
   const hasChanges = () => {
     if (!clinicalAttention) return false;
-    const originalUrgency = clinicalAttention.applies_urgency_law;
 
     const currentTxt = buildTxt().trim();
     const originalTxt = (clinicalAttention.diagnostic || "").trim();
 
-    return currentTxt !== originalTxt || idEpisode !== (clinicalAttention.id_episodio || "");
+    return (
+      currentTxt !== originalTxt ||
+      idEpisode !== (clinicalAttention.id_episodio || "")
+    );
   };
 
   const isDirty = hasChanges();
@@ -148,7 +147,7 @@ ${diagnostico}
         {
           diagnostic: newTxt,
           clinical_summary_txt: newTxt,
-          id_episodio: idEpisode
+          id_episodio: idEpisode,
         }
       );
 
@@ -175,107 +174,108 @@ ${diagnostico}
 
   return (
     <div
-      className="fixed inset-0 z-50 flex items-center justify-center bg-black/70 backdrop-blur-sm p-4"
+      className="fixed inset-0 z-50 flex items-center justify-center bg-black/50 backdrop-blur-sm p-4"
       onClick={handleBackdrop}
     >
-      <div className="bg-[#0A0A0A] rounded-2xl border border-white/10 w-full max-w-2xl shadow-2xl flex flex-col max-h-[90vh] overflow-hidden animate-in fade-in zoom-in duration-200">
+      <div className="bg-health-card rounded-2xl border border-health-border w-full max-w-2xl shadow-2xl flex flex-col max-h-[90vh] overflow-hidden animate-in fade-in zoom-in duration-200">
         {/* Header */}
-        <div className="px-6 py-4 border-b border-white/10 flex justify-between items-center bg-white/5">
-          <h2 className="text-lg font-semibold text-white tracking-wide">
+        <div className="px-6 py-4 border-b border-health-border flex justify-between items-center bg-health-bg/50">
+          <h2 className="text-lg font-semibold text-health-text tracking-wide">
             Editar Atención Clínica
           </h2>
 
           <button
             onClick={onClose}
-            className="text-white/50 hover:text-white transition"
+            className="text-health-text-muted hover:text-health-text transition text-xl leading-none cursor-pointer"
           >
-            ✕
+            &times;
           </button>
         </div>
 
         <form onSubmit={handleSubmit} className="p-6 space-y-6 overflow-y-auto">
           {/* ID EPISODIO */}
-<div>
-  <label className="block text-sm font-medium text-white/70 mb-2">
-    ID Episodio
-  </label>
-  <input
-    value={idEpisode}
-    onChange={(e) => setIdEpisode(e.target.value)}
-    className="w-full bg-[#0f1220] border border-white/10 rounded-lg px-4 py-2 text-white focus:ring-2 focus:ring-health-accent outline-none transition-all shadow-inner"
-  />
-  <p className="text-xs text-white/40 mt-1">
-  </p>
-</div>
-{/* MOTIVO DE CONSULTA */}
-        <div>
-          <label className="block text-sm font-medium text-white/70 mb-2">
-            Motivo de Consulta
-          </label>
-          <textarea
-            value={motivoConsulta}
-            onChange={(e) => setMotivoConsulta(e.target.value)}
-            rows={2}
-            className="w-full bg-[#0f1220] border border-white/10 rounded-lg px-4 py-3 text-white focus:ring-2 focus:ring-health-accent outline-none transition-all shadow-inner"
-          />
-        </div>
-        {/* TRIAGE */}
-        <div>
-          <label className="block text-sm font-medium text-white/70 mb-2">
-            Triage (1 = más grave)
-          </label>
-
-          <div className="flex gap-2">
-            {[1, 2, 3, 4, 5].map((n) => (
-              <button
-                key={n}
-                type="button"
-                onClick={() => setTriage(String(n))}
-                className={`
-                  px-4 py-2 rounded-lg border transition font-semibold 
-                  ${
-                    triage === String(n)
-                      ? "bg-health-accent text-black border-health-accent-dark"
-                      : "bg-[#0f1220] text-white/70 border-white/10 hover:bg-white/10"
-                  }
-                `}
-              >
-                {n}
-              </button>
-            ))}
+          <div>
+            <label className="block text-sm font-medium text-health-text-muted mb-2">
+              ID Episodio
+            </label>
+            <input
+              value={idEpisode}
+              onChange={(e) => setIdEpisode(e.target.value)}
+              className="w-full bg-white border border-health-border rounded-lg px-4 py-2 text-health-text focus:ring-2 focus:ring-health-accent outline-none transition-all shadow-sm"
+            />
           </div>
-        </div>
 
+          {/* MOTIVO DE CONSULTA */}
+          <div>
+            <label className="block text-sm font-medium text-health-text-muted mb-2">
+              Motivo de Consulta
+            </label>
+            <textarea
+              value={motivoConsulta}
+              onChange={(e) => setMotivoConsulta(e.target.value)}
+              rows={2}
+              className="w-full bg-white border border-health-border rounded-lg px-4 py-3 text-health-text focus:ring-2 focus:ring-health-accent outline-none transition-all shadow-sm"
+            />
+          </div>
+
+          {/* TRIAGE */}
+          <div>
+            <label className="block text-sm font-medium text-health-text-muted mb-2">
+              Triage (1 = más grave)
+            </label>
+
+            <div className="flex gap-2">
+              {[1, 2, 3, 4, 5].map((n) => (
+                <button
+                  key={n}
+                  type="button"
+                  onClick={() => setTriage(String(n))}
+                  className={`
+                    px-4 py-2 rounded-lg border transition font-semibold 
+                    ${
+                      triage === String(n)
+                        ? "bg-health-accent text-white border-health-accent"
+                        : "bg-white text-health-text-muted border-health-border hover:bg-health-bg"
+                    }
+                  `}
+                >
+                  {n}
+                </button>
+              ))}
+            </div>
+          </div>
 
           {/* ANAMNESIS */}
           <div>
-            <label className="block text-sm font-medium text-white/70 mb-2">
+            <label className="block text-sm font-medium text-health-text-muted mb-2">
               Anamnesis
             </label>
             <textarea
               value={anamnesis}
               onChange={(e) => setAnamnesis(e.target.value)}
               rows={3}
-              className="w-full bg-[#0f1220] border border-white/10 rounded-lg px-4 py-3 text-white focus:ring-2 focus:ring-health-accent outline-none transition-all shadow-inner"
+              className="w-full bg-white border border-health-border rounded-lg px-4 py-3 text-health-text focus:ring-2 focus:ring-health-accent outline-none transition-all shadow-sm"
             />
           </div>
 
           {/* SIGNOS VITALES GRID */}
           <div>
-            <label className="block text-sm font-medium text-white/70 mb-3">
+            <label className="block text-sm font-medium text-health-text-muted mb-3">
               Signos Vitales
             </label>
 
             <div className="grid grid-cols-2 md:grid-cols-3 gap-4">
               {Object.entries(signos).map(([k, v]) => (
                 <div key={k} className="flex flex-col">
-                  <span className="text-xs text-white/50 mb-1">{k}</span>
+                  <span className="text-xs text-health-text-muted/80 mb-1">
+                    {k}
+                  </span>
                   <input
                     value={v}
                     onChange={(e) =>
                       setSignos({ ...signos, [k]: e.target.value })
                     }
-                    className="bg-[#0f1220] border border-white/10 rounded-lg px-3 py-2 text-white focus:ring-2 focus:ring-health-accent outline-none transition-all shadow-inner"
+                    className="bg-white border border-health-border rounded-lg px-3 py-2 text-health-text focus:ring-2 focus:ring-health-accent outline-none transition-all shadow-sm"
                   />
                 </div>
               ))}
@@ -284,34 +284,34 @@ ${diagnostico}
 
           {/* HALLAZGOS */}
           <div>
-            <label className="block text-sm font-medium text-white/70 mb-2">
+            <label className="block text-sm font-medium text-health-text-muted mb-2">
               Hallazgos Clínicos
             </label>
             <textarea
               value={hallazgos}
               onChange={(e) => setHallazgos(e.target.value)}
               rows={3}
-              className="w-full bg-[#0f1220] border border-white/10 rounded-lg px-4 py-3 text-white focus:ring-2 focus:ring-health-accent outline-none transition-all shadow-inner"
+              className="w-full bg-white border border-health-border rounded-lg px-4 py-3 text-health-text focus:ring-2 focus:ring-health-accent outline-none transition-all shadow-sm"
             />
           </div>
 
           {/* DIAGNÓSTICO */}
           <div>
-            <label className="block text-sm font-medium text-white/70 mb-2">
+            <label className="block text-sm font-medium text-health-text-muted mb-2">
               Diagnóstico Presuntivo
             </label>
             <textarea
               value={diagnostico}
               onChange={(e) => setDiagnostico(e.target.value)}
               rows={3}
-              className="w-full bg-[#0f1220] border border-white/10 rounded-lg px-4 py-3 text-white focus:ring-2 focus:ring-health-accent outline-none transition-all shadow-inner"
+              className="w-full bg-white border border-health-border rounded-lg px-4 py-3 text-health-text focus:ring-2 focus:ring-health-accent outline-none transition-all shadow-sm"
             />
           </div>
 
-          <hr className="border-white/10" />
+          <hr className="border-health-border" />
 
           {error && (
-            <div className="p-3 rounded-lg bg-red-500/10 border border-red-500/20 text-red-400 text-sm text-center">
+            <div className="p-3 rounded-lg bg-red-50 border border-red-200 text-red-600 text-sm text-center">
               {error}
             </div>
           )}
@@ -321,7 +321,7 @@ ${diagnostico}
             <button
               type="button"
               onClick={onClose}
-              className="px-4 py-2 text-sm font-medium text-white/60 hover:text-white transition-colors cursor-pointer"
+              className="px-4 py-2 text-sm font-medium text-health-text-muted hover:text-health-text transition-colors cursor-pointer"
             >
               Cancelar
             </button>
@@ -332,8 +332,8 @@ ${diagnostico}
               className={`px-6 py-2 rounded-xl text-sm font-bold flex items-center gap-2 transition
                 ${
                   !isDirty
-                    ? "bg-white/10 text-white/30 cursor-not-allowed"
-                    : "bg-health-accent text-black hover:bg-health-accent-dark cursor-pointer"
+                    ? "bg-gray-100 text-gray-400 cursor-not-allowed border border-gray-200"
+                    : "bg-health-accent text-white hover:bg-health-accent-dark cursor-pointer shadow-md shadow-health-accent/20"
                 }
               `}
             >
