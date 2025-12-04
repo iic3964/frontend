@@ -1,5 +1,5 @@
 import { useEffect, useState } from "react";
-import { apiClient } from "../modules/api";
+import { apiClient } from "../../modules/api";
 
 export default function ConsultTable() {
   const [clinicalAttentions, setClinicalAttentions] = useState([]);
@@ -17,7 +17,8 @@ export default function ConsultTable() {
   const [filters, setFilters] = useState({
     patient: "", // Name or RUT
     doctor: "", // Dynamic doctor search
-    status: "all", // "all", "pending", "approved/applies", "rejected/not_applies"
+    status: "all", // Resident Status: "all", "pending", "approved", "rejected"
+    supervisorStatus: "all", // Supervisor Status: "all", "pending" (null), "approved" (true), "rejected" (false)
   });
 
   useEffect(() => {
@@ -71,12 +72,15 @@ export default function ConsultTable() {
 
   const formatDate = (dateString) => {
     if (!dateString) return "N/A";
-    return new Date(dateString).toLocaleDateString("es-CL");
+    return new Date(dateString).toLocaleDateString("es-CL", {
+        year: 'numeric', month: '2-digit', day: '2-digit', hour: '2-digit', minute: '2-digit'
+    });
   };
 
   const normalize = (text) => (text ? text.toLowerCase().trim() : "");
 
   const filteredData = clinicalAttentions.filter((item) => {
+    // 1. Role-based filtering (Data Access)
     if (userRole && userRole !== "admin") {
       const myNameNormalized = normalize(userFullName);
       
@@ -91,6 +95,7 @@ export default function ConsultTable() {
       }
     }
 
+    // 2. Search Filters
     if (filters.patient) {
       const search = normalize(filters.patient);
       const pName = normalize(`${item.patient.first_name} ${item.patient.last_name}`);
@@ -119,16 +124,19 @@ export default function ConsultTable() {
       }
     }
 
+    // 3. Status Filter (Resident)
     if (filters.status !== "all") {
-      if (userRole === "resident") {
-        if (filters.status === "pending" && item.medic_approved !== null) return false;
-        if (filters.status === "approved" && item.medic_approved !== true) return false;
-        if (filters.status === "rejected" && item.medic_approved !== false) return false;
-      } else {
-        if (filters.status === "pending" && item.applies_urgency_law !== null) return false;
-        if (filters.status === "approved" && item.applies_urgency_law !== true) return false;
-        if (filters.status === "rejected" && item.applies_urgency_law !== false) return false;
-      }
+      if (filters.status === "pending" && item.medic_approved !== null) return false;
+      if (filters.status === "approved" && item.medic_approved !== true) return false;
+      if (filters.status === "rejected" && item.medic_approved !== false) return false;
+    }
+
+    // 4. Status Filter (Supervisor) - NEW
+    if (filters.supervisorStatus !== "all") {
+      // "pending" represents "Sin observaciones" (null)
+      if (filters.supervisorStatus === "pending" && item.supervisor_approved !== null) return false;
+      if (filters.supervisorStatus === "approved" && item.supervisor_approved !== true) return false;
+      if (filters.supervisorStatus === "rejected" && item.supervisor_approved !== false) return false;
     }
 
     return true;
@@ -174,7 +182,7 @@ export default function ConsultTable() {
     <div className="space-y-6">
       
       {/* --- FILTER BAR --- */}
-      <div className="bg-white p-4 rounded-2xl border border-health-border shadow-sm grid grid-cols-1 md:grid-cols-3 gap-4">
+      <div className="bg-white p-4 rounded-2xl border border-health-border shadow-sm grid grid-cols-1 md:grid-cols-4 gap-4">
         {/* Patient Filter */}
         <div className="flex flex-col gap-1">
           <label className="text-xs text-health-text-muted font-medium">Paciente (Nombre o RUT)</label>
@@ -199,10 +207,10 @@ export default function ConsultTable() {
           />
         </div>
 
-        {/* Status Filter (Dynamic) */}
+        {/* Resident Status Filter */}
         <div className="flex flex-col gap-1">
           <label className="text-xs text-health-text-muted font-medium">
-             {userRole === "resident" ? "Estado Validación" : "Estado Ley Urgencia"}
+             Estado Validación Residente
           </label>
           <select 
             value={filters.status}
@@ -211,18 +219,25 @@ export default function ConsultTable() {
           >
             <option value="all">Todos</option>
             <option value="pending">Pendiente</option>
-            {userRole === "resident" ? (
-              <>
-                <option value="approved">Validado (Aprobado)</option>
-                <option value="rejected">Objetado / Rechazado</option>
-              </>
-            ) : (
-              <>
-                {/* Admin ve las opciones de Supervisor (Ley de Urgencia) */}
-                <option value="approved">Aplica Ley Urgencia</option>
-                <option value="rejected">No Aplica</option>
-              </>
-            )}
+            <option value="approved">Validado (Aprobado)</option>
+            <option value="rejected">Rechazado</option>
+          </select>
+        </div>
+
+        {/* Supervisor Status Filter (NEW) */}
+        <div className="flex flex-col gap-1">
+          <label className="text-xs text-health-text-muted font-medium">
+             Estado Validación Supervisor
+          </label>
+          <select 
+            value={filters.supervisorStatus}
+            onChange={(e) => setFilters(prev => ({ ...prev, supervisorStatus: e.target.value }))}
+            className="border border-health-border rounded-lg px-3 py-2 text-sm text-health-text outline-none focus:ring-1 focus:ring-health-accent bg-white"
+          >
+            <option value="all">Todos</option>
+            <option value="pending">Sin observaciones</option>
+            <option value="approved">Ratificado</option>
+            <option value="rejected">Objetado</option>
           </select>
         </div>
       </div>
@@ -238,7 +253,7 @@ export default function ConsultTable() {
               <th>RUT</th>
               <th>Ley Urgencia</th>
               <th>Análisis IA</th>
-              <th>Validación Médico</th>
+              <th>Validación Residente</th>
               <th>Validación Supervisor</th>
 
               {userRole !== "resident" && <th>Médico Residente</th>}
@@ -251,11 +266,29 @@ export default function ConsultTable() {
 
           <tbody className="divide-y divide-health-border bg-white">
             {filteredData.map((r) => {
-              const isPendingUrgencyLaw =
-                r.ai_result !== true && r.ai_result !== false;
-              const doesUrgencyLawApply =
-                (r.ai_result === true && r.medic_approved === false) ||
-                (r.ai_result === false && r.medic_approved === true);
+              // --- LOGIC CALCULATIONS ---
+              
+              const isResidentApproved = r.medic_approved === true;
+              const isResidentRejected = r.medic_approved === false;
+              const isPendingValidation = r.medic_approved === null;
+
+              // Supervisor Status Logic
+              const isSupervisorObjected = r.supervisor_approved === false;
+              const isSupervisorRatified = r.supervisor_approved === true;
+              // If null, it means "Sin observaciones" (Default OK)
+
+              // Calculate Effective Urgency Law Status based on rules
+              let urgencyLawApplies = null; 
+
+              if (isPendingValidation) {
+                urgencyLawApplies = null; // Yellow/Pending
+              } else if (isResidentApproved) {
+                // Resident Approved -> Matches AI (Standard logic)
+                urgencyLawApplies = r.ai_result;
+              } else if (isResidentRejected) {
+                // Resident Rejected -> Opposite of AI
+                urgencyLawApplies = !r.ai_result;
+              }
 
               return (
                 <tr key={r.id} className="hover:bg-gray-50 text-health-text">
@@ -275,78 +308,100 @@ export default function ConsultTable() {
                     {r.patient.rut}
                   </td>
 
-                  <td className="px-4 py-3 whitespace-nowrap">
+                   {/* --- LEY URGENCIA COLUMN --- */}
+                   <td className="px-4 py-3 whitespace-nowrap">
                     <span
-                      className={`rounded-md px-2 py-1 text-xs ${
-                        isPendingUrgencyLaw
-                          ? "bg-gray-100 text-gray-600"
-                          : doesUrgencyLawApply
+                      className={`rounded-md px-2 py-1 text-xs font-medium ${
+                        urgencyLawApplies === true
                           ? "bg-green-100 text-green-700"
-                          : "bg-red-100 text-red-700"
-                      }`}
-                    >
-                      {isPendingUrgencyLaw
-                        ? "Pendiente"
-                        : doesUrgencyLawApply
-                        ? "Aplica"
-                        : "No aplica"}
-                    </span>
-                  </td>
-
-                  <td className="px-4 py-3 whitespace-nowrap">
-                    <span
-                      className={`rounded-md px-2 py-1 text-xs ${
-                        r.applies_urgency_law === true
-                          ? "bg-green-100 text-green-700"
-                          : r.applies_urgency_law === false
+                          : urgencyLawApplies === false
                           ? "bg-red-100 text-red-700"
-                          : "bg-gray-100 text-gray-600"
+                          : "bg-yellow-100 text-yellow-700"
                       }`}
                     >
-                      {r.applies_urgency_law === true
+                      {urgencyLawApplies === true
                         ? "Aplica"
-                        : r.applies_urgency_law === false
+                        : urgencyLawApplies === false
                         ? "No aplica"
                         : "Pendiente"}
                     </span>
                   </td>
 
-                  <td className="px-4 py-3 whitespace-nowrap">
-                    Por implementar
-                  </td>
-
+                  {/* AI Result */}
                   <td className="px-4 py-3 whitespace-nowrap">
                     <span
-                      className={`rounded-md px-2 py-1 text-xs ${
-                        r.ai_result && r.medic_approved === false
+                      className={`rounded-md px-2 py-1 text-xs font-medium ${
+                        r.ai_result === true
+                          ? "bg-green-100 text-green-700"
+                          : r.ai_result === false
                           ? "bg-red-100 text-red-700"
                           : "bg-gray-100 text-gray-600"
                       }`}
                     >
-                      {r.ai_result && r.medic_approved === false
+                      {r.ai_result === true
+                        ? "Aplica"
+                        : r.ai_result === false
+                        ? "No aplica"
+                        : "Pendiente"}
+                    </span>
+                  </td>
+
+                  {/* Validación Residente */}
+                  <td className="px-4 py-3 whitespace-nowrap">
+                    <span
+                      className={`rounded-md px-2 py-1 text-xs font-medium ${
+                        isResidentApproved
+                          ? "bg-green-100 text-green-700"
+                          : isResidentRejected
+                          ? "bg-red-100 text-red-700"
+                          : "bg-yellow-100 text-yellow-700"
+                      }`}
+                    >
+                      {isResidentApproved
+                        ? "Aprobado"
+                        : isResidentRejected
+                        ? "Rechazado"
+                        : "Pendiente"}
+                    </span>
+                  </td>
+
+                  {/* Validación Supervisor (Gestión por Excepción) */}
+                  <td className="px-4 py-3 whitespace-nowrap">
+                    <span
+                      className={`rounded-md px-2 py-1 text-xs font-medium ${
+                        isSupervisorObjected
+                          ? "bg-red-100 text-red-700 border border-red-200"
+                          : isSupervisorRatified
+                          ? "bg-purple-100 text-purple-700 border border-purple-200"
+                          : "text-gray-400"
+                      }`}
+                    >
+                      {isSupervisorObjected
                         ? "Objetado"
-                        : "-"}
+                        : isSupervisorRatified
+                        ? "Ratificado"
+                        : "Sin observaciones"}
                     </span>
                   </td>
 
                   {userRole !== "resident" && (
                     <td className="px-4 py-3 whitespace-nowrap">
-                      {r.resident_doctor.first_name}{" "}
-                      {r.resident_doctor.last_name}
+                      {r.resident_doctor?.first_name}{" "}
+                      {r.resident_doctor?.last_name}
                     </td>
                   )}
 
                   {userRole !== "supervisor" && (
                     <td className="px-4 py-3 whitespace-nowrap">
-                      {r.supervisor_doctor.first_name}{" "}
-                      {r.supervisor_doctor.last_name}
+                      {r.supervisor_doctor?.first_name}{" "}
+                      {r.supervisor_doctor?.last_name}
                     </td>
                   )}
 
                   <td className="px-4 py-3 whitespace-nowrap">
                     <a
                       href={`/clinical_attentions/details/${r.id}`}
-                      className="text-health-accent hover:underline"
+                      className="text-health-accent hover:underline font-medium"
                     >
                       Ver más
                     </a>

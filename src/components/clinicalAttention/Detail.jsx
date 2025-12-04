@@ -2,6 +2,8 @@ import { useEffect, useState } from "react";
 import { apiClient } from "../../modules/api";
 import DeleteModal from "./DeleteModal";
 import EditModal from "./EditModal";
+import ResidentApprovalCard from "./ResidentApprovalCard"; 
+import SupervisorActionCard from "./SupervisorActionCard"; 
 
 // =====================
 // PARSE CLINICAL SUMMARY TXT
@@ -28,11 +30,13 @@ const parseClinicalSummary = (txt) => {
     const block = raw[i].toLowerCase();
 
     if (block === "triage") output.triage = raw[i + 1] || "";
-    if (block === "motivo de consulta") output.motivoConsulta = raw[i + 1] || "";
+    if (block === "motivo de consulta")
+      output.motivoConsulta = raw[i + 1] || "";
     if (block === "anamnesis") output.anamnesis = raw[i + 1] || "";
     if (block === "signos vitales") output.signosVitalesRaw = raw[i + 1] || "";
     if (block === "hallazgos clínicos") output.hallazgos = raw[i + 1] || "";
-    if (block === "diagnóstico presuntivo") output.diagnostico = raw[i + 1] || "";
+    if (block === "diagnóstico presuntivo")
+      output.diagnostico = raw[i + 1] || "";
   }
 
   // Parse signos vitales
@@ -47,7 +51,6 @@ const parseClinicalSummary = (txt) => {
 
   return output;
 };
-
 
 // =====================
 // COMPONENTE TARJETA MÉDICO (HOVER EFFECT)
@@ -130,9 +133,7 @@ export default function ClinicalAttentionDetail({ attentionId }) {
   const [isUpdating, setIsUpdating] = useState(false);
 
   const [polling, setPolling] = useState(false);
-  const [approvalReason, setApprovalReason] = useState("");
-  const [rejectMode, setRejectMode] = useState(false);
-
+  
   const [currentUser, setCurrentUser] = useState(null);
 
   useEffect(() => {
@@ -177,8 +178,7 @@ export default function ClinicalAttentionDetail({ attentionId }) {
 
       if (response.success && response.data) {
         setClinicalAttention(response.data);
-        setApprovalReason(response.data.medic_reject_reason || "");
-
+        
         // Si ya tenemos resultado y veníamos de un update, quitamos el estado de carga
         if (isUpdating && response.data.ai_result !== null) {
           setIsUpdating(false);
@@ -209,6 +209,8 @@ export default function ClinicalAttentionDetail({ attentionId }) {
         overwritten_by: null,
         overwritten_reason: null,
         medic_approved: null,
+        supervisor_approved: null, 
+        supervisor_observation: null
       });
     } catch (error) {
       console.error("Failed to reset overwritten fields:", error);
@@ -217,35 +219,6 @@ export default function ClinicalAttentionDetail({ attentionId }) {
     setIsUpdating(true);
 
     fetchData();
-  };
-
-  const handleMedicApproval = async (approved) => {
-    if (!approved && approvalReason.trim().length < 3) {
-      alert("Debes ingresar una razón para rechazar.");
-      return;
-    }
-
-    const id = clinicalAttention.id;
-    const medicId = currentUser?.id;
-
-    if (!medicId) {
-      alert("Error de sesión: No se identificó al médico.");
-      return;
-    }
-
-    const resp = await apiClient.AproveClinicalAttention(
-      id,
-      approved,
-      approved ? "" : approvalReason,
-      medicId
-    );
-
-    if (resp.success) {
-      fetchData();
-      setRejectMode(false);
-    } else {
-      alert("Error al actualizar aprobación.");
-    }
   };
 
   const formatDate = (dateString) => {
@@ -264,7 +237,9 @@ export default function ClinicalAttentionDetail({ attentionId }) {
       <div className="flex items-center justify-center py-20">
         <div className="flex flex-col items-center gap-3">
           <div className="w-8 h-8 border-4 border-health-accent border-t-transparent rounded-full animate-spin"></div>
-          <span className="text-health-text-muted text-sm">Cargando información...</span>
+          <span className="text-health-text-muted text-sm">
+            Cargando información...
+          </span>
         </div>
       </div>
     );
@@ -291,13 +266,10 @@ export default function ClinicalAttentionDetail({ attentionId }) {
   const userRole = currentUser?.user_metadata?.role;
   const userId = currentUser?.id;
   const isOwner = ca.resident_doctor?.id === userId;
-  const canEdit =
-    userRole === "admin" ||
-    userRole === "supervisor" || (userRole === "resident" && isOwner);
-  
+  const canEdit = userRole === "admin" || (userRole === "resident" && isOwner);
+
   return (
     <div className="p-6 flex flex-col gap-6 animate-in fade-in duration-500 relative">
-
       {/* Header */}
       <div className="flex items-center justify-between">
         <a
@@ -319,35 +291,32 @@ export default function ClinicalAttentionDetail({ attentionId }) {
           </svg>
           Volver a lista
         </a>
-        {clinicalAttention?.id_episodio && (<div className="text-health-text text-sm font-mono bg-gray-50 px-3 py-1 rounded-md border border-health-border">
-          ID Episodio:{" "}
-          <span className="text-health-accent font-semibold">
-          {clinicalAttention?.id_episodio }
-          </span>
-        </div>)}
+        {clinicalAttention?.id_episodio && (
+          <div className="text-health-text text-sm font-mono bg-gray-50 px-3 py-1 rounded-md border border-health-border">
+            ID Episodio:{" "}
+            <span className="text-health-accent font-semibold">
+              {clinicalAttention?.id_episodio}
+            </span>
+          </div>
+        )}
 
         {canEdit && (
           <div className="flex gap-3">
             <button
               onClick={() => setShowEditModal(true)}
-              className="rounded-lg bg-health-accent text-white px-4 py-2 text-sm font-medium hover:bg-health-accent-dark transition shadow-lg flex items-center gap-2"
+              className="rounded-lg bg-health-accent text-white px-4 py-2 text-sm font-medium hover:bg-health-accent-dark transition shadow-lg flex items-center gap-2 cursor-pointer"
             >
               Editar
             </button>
             <button
               onClick={() => setShowDeleteModal(true)}
-              className="rounded-lg bg-red-500 text-white px-4 py-2 text-sm font-medium hover:bg-red-600 transition shadow-lg flex items-center gap-2"
+              className="rounded-lg bg-red-500 text-white px-4 py-2 text-sm font-medium hover:bg-red-600 transition shadow-lg flex items-center gap-2 cursor-pointer"
             >
               Eliminar
             </button>
           </div>
         )}
       </div>
-
-      {/* ================================================= */}
-      {/* FILA 1 (ARRIBA)                   */}
-      {/* Datos Paciente (Izq) --- Equipo Médico (Der)  */}
-      {/* ================================================= */}
 
       <div className="grid gap-6 md:grid-cols-2 items-stretch">
         {/* COLUMNA 1: DATOS PACIENTE */}
@@ -361,7 +330,8 @@ export default function ClinicalAttentionDetail({ attentionId }) {
               {ca.patient.first_name} {ca.patient.last_name}
             </li>
             <li>
-              <span className="text-health-text-muted">RUT:</span> {ca.patient.rut}
+              <span className="text-health-text-muted">RUT:</span>{" "}
+              {ca.patient.rut}
             </li>
             <li>
               <span className="text-health-text-muted">Teléfono:</span>{" "}
@@ -385,7 +355,6 @@ export default function ClinicalAttentionDetail({ attentionId }) {
           </h2>
 
           <div className="space-y-4 flex-1">
-            {/* Médico Residente (Hoverable) */}
             <DoctorCard
               title="Médico Residente"
               firstName={ca.resident_doctor.first_name}
@@ -395,8 +364,6 @@ export default function ClinicalAttentionDetail({ attentionId }) {
               initial="R"
               colorClass="bg-health-accent/20 text-health-accent"
             />
-
-            {/* Médico Supervisor (Hoverable) */}
             <DoctorCard
               title="Médico Supervisor"
               firstName={ca.supervisor_doctor.first_name}
@@ -417,11 +384,6 @@ export default function ClinicalAttentionDetail({ attentionId }) {
         </div>
       </div>
 
-      {/* ================================================= */}
-      {/* FILA 2 (ABAJO)                    */}
-      {/* Información Clínica (Izq) --- Análisis IA (Der) */}
-      {/* ================================================= */}
-
       <div className="grid gap-6 md:grid-cols-2 items-start">
         {/* COLUMNA 1: INFORMACIÓN CLÍNICA */}
         <div className="bg-white p-5 rounded-xl border border-health-border shadow-xl backdrop-blur-md h-full">
@@ -429,25 +391,23 @@ export default function ClinicalAttentionDetail({ attentionId }) {
             Información Clínica
           </h2>
           {/* MOTIVO DE CONSULTA */}
-      <div className="mb-6">
-        <h3 className="text-sm text-health-text-muted font-semibold uppercase tracking-wide">
-          Motivo de Consulta
-        </h3>
+          <div className="mb-6">
+            <h3 className="text-sm text-health-text-muted font-semibold uppercase tracking-wide">
+              Motivo de Consulta
+            </h3>
+            <p className="text-health-text mt-2 leading-relaxed whitespace-pre-line">
+              {parsed?.motivoConsulta || "N/A"}
+            </p>
+          </div>
 
-        <p className="text-health-text mt-2 leading-relaxed whitespace-pre-line">
-          {parsed?.motivoConsulta || "N/A"}
-        </p>
-      </div>
-
-                {/* TRIAGE */}
-<div className="mb-6">
-  <h3 className="text-sm text-health-text-muted font-semibold uppercase tracking-wide">
-    Triage
-  </h3>
-
-        {parsed?.triage ? (
-          <span
-            className={`
+          {/* TRIAGE */}
+          <div className="mb-6">
+            <h3 className="text-sm text-health-text-muted font-semibold uppercase tracking-wide">
+              Triage
+            </h3>
+            {parsed?.triage ? (
+              <span
+                className={`
               inline-block mt-2 px-3 py-1 rounded-lg text-sm font-semibold
               ${
                 parsed.triage === "1"
@@ -461,16 +421,15 @@ export default function ClinicalAttentionDetail({ attentionId }) {
                   : "bg-green-500 text-white"
               }
             `}
-          >
-            Nivel {parsed.triage}
-          </span>
-        ) : (
-          <p className="text-health-text-muted mt-2">No registrado</p>
-        )}
-      </div>
+              >
+                Nivel {parsed.triage}
+              </span>
+            ) : (
+              <p className="text-health-text-muted mt-2">No registrado</p>
+            )}
+          </div>
 
-                {/* ANAMNESIS */}
-
+          {/* ANAMNESIS */}
           <div className="mb-6">
             <h3 className="text-sm text-health-text-muted font-semibold uppercase tracking-wide">
               Anamnesis
@@ -494,7 +453,9 @@ export default function ClinicalAttentionDetail({ attentionId }) {
                     className="flex flex-col bg-gray-50 border border-health-border rounded-lg p-3"
                   >
                     <span className="text-xs text-health-text-muted">{k}</span>
-                    <span className="text-health-text font-medium mt-1">{v}</span>
+                    <span className="text-health-text font-medium mt-1">
+                      {v}
+                    </span>
                   </div>
                 ))}
               </div>
@@ -533,7 +494,6 @@ export default function ClinicalAttentionDetail({ attentionId }) {
           <ul className="space-y-3 text-health-text">
             <li>
               <span className="text-health-text-muted">Ley de Urgencia:</span>
-
               {isUpdating ? (
                 <span className="ml-2 text-health-text-muted italic text-xs">
                   Cargando...
@@ -559,7 +519,6 @@ export default function ClinicalAttentionDetail({ attentionId }) {
 
             <li>
               <span className="text-health-text-muted">Resultado IA:</span>
-
               {isUpdating ? (
                 <span className="ml-2 text-health-text-muted italic text-xs">
                   Cargando...
@@ -614,114 +573,65 @@ export default function ClinicalAttentionDetail({ attentionId }) {
             <li>
               <span className="text-health-text-muted">Razón IA:</span>{" "}
               {isUpdating ? (
-                <span className="text-health-text-muted italic">Cargando...</span>
+                <span className="text-health-text-muted italic">
+                  Cargando...
+                </span>
               ) : (
                 ca.ai_reason || "N/A"
               )}
             </li>
           </ul>
 
-          {/* APROBACIÓN MÉDICA */}
-          {canEdit && ca.medic_approved === null && !isUpdating && (
-            <div className="mt-6 bg-gray-50 border border-health-border p-4 rounded-xl">
-              <h3 className="text-health-text text-md font-semibold mb-3">
-                Aprobación del Médico
-              </h3>
+          {/* ================================================== */}
+          {/* BLOQUE APROBACIÓN MÉDICO RESIDENTE (COMPONENTE) */}
+          {/* ================================================== */}
+          <ResidentApprovalCard 
+            clinicalAttention={ca}
+            userRole={userRole}
+            onUpdate={fetchData}
+          />
 
-              {rejectMode ? (
-                <>
-                  <div className="mb-3">
-                    <label className="text-health-text-muted text-sm">
-                      Razón del rechazo
-                    </label>
-                    <textarea
-                      className="w-full mt-1 p-2 bg-white border border-health-border rounded-lg text-health-text"
-                      rows={2}
-                      value={approvalReason}
-                      onChange={(e) => setApprovalReason(e.target.value)}
-                    />
-                  </div>
+          {/* ================================================== */}
+          {/* BLOQUE GESTIÓN SUPERVISOR (COMPONENTE) */}
+          {/* ================================================== */}
+          <SupervisorActionCard 
+            clinicalAttention={ca}
+            userRole={userRole}
+            onUpdate={fetchData}
+          />
 
-                  <button
-                    onClick={() => handleMedicApproval(false)}
-                    className="bg-red-600/40 text-red-300 px-4 py-2 rounded-lg hover:bg-red-600/60 transition"
-                  >
-                    Enviar Rechazo
-                  </button>
-
-                  <button
-                    onClick={() => {
-                      setRejectMode(false);
-                      setApprovalReason("");
-                    }}
-                    className="ml-3 bg-white/10 text-white px-4 py-2 rounded-lg hover:bg-white/20 transition"
-                  >
-                    Cancelar
-                  </button>
-                </>
-              ) : (
-                <div className="flex gap-3">
-                  <button
-                    onClick={() => handleMedicApproval(true)}
-                    className="bg-green-50 text-green-600 px-4 py-2 rounded-lg hover:bg-green-100 transition border border-green-200"
-                  >
-                    Aprobar resultado IA
-                  </button>
-
-                  <button
-                    onClick={() => setRejectMode(true)}
-                    className="bg-red-50 text-red-600 px-4 py-2 rounded-lg hover:bg-red-100 transition border border-red-200"
-                  >
-                    Rechazar resultado IA
-                  </button>
+          {/* ================================================== */}
+          {/* MENSAJES DE ESTADO SUPERVISOR (Visible para Residentes/Todos) */}
+          {/* ================================================== */}
+          {userRole === 'resident' && (
+            <>
+              {ca.supervisor_approved === false && (
+                <div className="mt-6 bg-red-50 border border-red-200 p-4 rounded-xl">
+                  <h3 className="text-red-700 font-bold mb-1">Caso Objetado por Supervisor</h3>
+                  <p className="text-sm text-red-600 italic">"{ca.supervisor_observation}"</p>
                 </div>
               )}
-            </div>
+
+              {ca.supervisor_approved === true && (
+                <div className="mt-6 bg-purple-50 border border-purple-200 p-4 rounded-xl">
+                  <h3 className="text-purple-700 font-bold mb-1">Caso Ratificado por Supervisor</h3>
+                  {ca.supervisor_observation && (
+                    <p className="text-sm text-purple-600 italic">"{ca.supervisor_observation}"</p>
+                  )}
+                </div>
+              )}
+            </>
           )}
 
-          {ca.medic_approved === true && (
-            <div className="mt-6 bg-green-600/10 border border-green-500/30 p-4 rounded-xl flex items-start gap-3">
-              <div className="mt-1 text-green-400">
-                <svg
-                  xmlns="http://www.w3.org/2000/svg"
-                  viewBox="0 0 24 24"
-                  fill="currentColor"
-                  className="w-5 h-5"
-                >
-                  <path
-                    fillRule="evenodd"
-                    d="M2.25 12c0-5.385 4.365-9.75 9.75-9.75s9.75 4.365 9.75 9.75-4.365 9.75-9.75 9.75S2.25 17.385 2.25 12zm13.36-1.814a.75.75 0 10-1.22-.872l-3.236 4.53L9.53 12.22a.75.75 0 00-1.06 1.06l2.25 2.25a.75.75 0 001.14-.094l3.75-5.25z"
-                    clipRule="evenodd"
-                  />
-                </svg>
-              </div>
-              <div>
-                <h3 className="text-green-400 font-semibold text-sm mt-1">
-                  Diagnóstico Validado
-                </h3>
-              </div>
-            </div>
-          )}
-
-          {/* AVISO DE SOBRESCRITURA */}
+          {/* AVISO DE SOBRESCRITURA (Legacy/Internal) */}
           {ca.overwritten_reason && ca.overwritten_reason.trim() !== "" && (
             <div className="mt-6 bg-yellow-600/10 border border-yellow-500/30 p-4 rounded-xl">
               <h3 className="text-yellow-400 font-semibold text-sm mb-2">
-                Atención Sobrescrita
+                Atención Sobrescrita (Legacy)
               </h3>
-
               <p className="text-health-text whitespace-pre-line text-sm mb-3">
                 {ca.overwritten_reason}
               </p>
-
-              {ca.overwritten_by && (
-                <div className="text-health-text-muted text-xs">
-                  <span className="font-semibold text-yellow-300">
-                    Sobrescrito por:
-                  </span>{" "}
-                  {ca.overwritten_by.first_name} {ca.overwritten_by.last_name}
-                </div>
-              )}
             </div>
           )}
         </div>
