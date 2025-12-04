@@ -181,6 +181,7 @@ export interface UpdateUserRequest {
 
 export type UserWithRole = DoctorWithId & {
   role: UserRole;
+  is_deleted: boolean;
 };
 
 export interface InsuranceCompany {

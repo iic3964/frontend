@@ -117,10 +117,18 @@ class ApiClient {
     });
   }
 
-  async getUsers(): Promise<ApiResponse<UserWithRole[]>> {
-    return this.request<UserWithRole[]>("/users/", {
-      method: "GET",
-    });
+  async getUsers(params?: {
+    page?: number;
+    page_size?: number;
+    search?: string;
+  }): Promise<ApiResponse<PaginatedResponse<UserWithRole>>> {
+    return this.request<PaginatedResponse<UserWithRole>>(
+      "/users/",
+      {
+        method: "GET",
+      },
+      params
+    );
   }
 
   async updateUser(
