@@ -116,7 +116,7 @@ class ApiClient {
   }
 
   async getUsers(): Promise<ApiResponse<UserWithRole[]>> {
-    return this.request<UserWithRole[]>("/users", {
+    return this.request<UserWithRole[]>("/users/", {
       method: "GET",
     });
   }
