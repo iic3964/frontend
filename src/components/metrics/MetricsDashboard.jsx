@@ -86,7 +86,7 @@ export default function MetricsDashboard() {
 
   const roleLabels = {
     resident: "Médico Residente",
-    supervisor: "Médico Jefe",
+    supervisor: "Jefe de Turno",
     admin: "Jefe de Servicio",
   };
 

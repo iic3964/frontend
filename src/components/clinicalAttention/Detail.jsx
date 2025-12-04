@@ -2,8 +2,8 @@ import { useEffect, useState } from "react";
 import { apiClient } from "../../modules/api";
 import DeleteModal from "./DeleteModal";
 import EditModal from "./EditModal";
-import ResidentApprovalCard from "./ResidentApprovalCard"; 
-import SupervisorActionCard from "./SupervisorActionCard"; 
+import ResidentApprovalCard from "./ResidentApprovalCard";
+import SupervisorActionCard from "./SupervisorActionCard";
 
 // =====================
 // PARSE CLINICAL SUMMARY TXT
@@ -133,7 +133,7 @@ export default function ClinicalAttentionDetail({ attentionId }) {
   const [isUpdating, setIsUpdating] = useState(false);
 
   const [polling, setPolling] = useState(false);
-  
+
   const [currentUser, setCurrentUser] = useState(null);
 
   useEffect(() => {
@@ -178,7 +178,7 @@ export default function ClinicalAttentionDetail({ attentionId }) {
 
       if (response.success && response.data) {
         setClinicalAttention(response.data);
-        
+
         // Si ya tenemos resultado y veníamos de un update, quitamos el estado de carga
         if (isUpdating && response.data.ai_result !== null) {
           setIsUpdating(false);
@@ -209,7 +209,7 @@ export default function ClinicalAttentionDetail({ attentionId }) {
         overwritten_by: null,
         overwritten_reason: null,
         medic_approved: null,
-        supervisor_approved: null, 
+        supervisor_approved: null,
         supervisor_observation: null
       });
     } catch (error) {
@@ -365,7 +365,7 @@ export default function ClinicalAttentionDetail({ attentionId }) {
               colorClass="bg-health-accent/20 text-health-accent"
             />
             <DoctorCard
-              title="Médico Supervisor"
+              title="Jefe de Turno"
               firstName={ca.supervisor_doctor.first_name}
               lastName={ca.supervisor_doctor.last_name}
               email={ca.supervisor_doctor.email}
@@ -585,7 +585,7 @@ export default function ClinicalAttentionDetail({ attentionId }) {
           {/* ================================================== */}
           {/* BLOQUE APROBACIÓN MÉDICO RESIDENTE (COMPONENTE) */}
           {/* ================================================== */}
-          <ResidentApprovalCard 
+          <ResidentApprovalCard
             clinicalAttention={ca}
             userRole={userRole}
             onUpdate={fetchData}
@@ -594,7 +594,7 @@ export default function ClinicalAttentionDetail({ attentionId }) {
           {/* ================================================== */}
           {/* BLOQUE GESTIÓN SUPERVISOR (COMPONENTE) */}
           {/* ================================================== */}
-          <SupervisorActionCard 
+          <SupervisorActionCard
             clinicalAttention={ca}
             userRole={userRole}
             onUpdate={fetchData}

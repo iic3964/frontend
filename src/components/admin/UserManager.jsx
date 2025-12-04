@@ -1,5 +1,7 @@
 import { useEffect, useState } from "react";
 import { apiClient } from "../../modules/api";
+import Icon from "../UI/Icon";
+import Tooltip from "../UI/Tooltip";
 
 const UserManager = () => {
   const [view, setView] = useState("list"); // 'list', 'create', 'edit'
@@ -52,7 +54,7 @@ const UserManager = () => {
           ...u,
           role: "admin",
         }));
-        
+
         // Combine all users. Backend sorts them by is_deleted ASC (active first)
         setUsers([...admins, ...supervisors, ...residents]);
       } else {
@@ -158,6 +160,9 @@ const UserManager = () => {
         };
 
         const resp = await apiClient.registerUser(payload);
+        if (!resp.success && resp.data) throw new Error({
+          "User already registered": "El email ya está registrado.",
+        }[resp.data.detail]);
         if (!resp.success) throw new Error(resp.error);
 
         setSuccessMsg("Usuario creado exitosamente.");
@@ -176,7 +181,6 @@ const UserManager = () => {
         setSuccessMsg(null);
       }, 3000);
     } catch (err) {
-      console.error(err);
       setError(err.message || "Error saving user");
     } finally {
       setLoading(false);
@@ -290,7 +294,7 @@ const UserManager = () => {
                   <th className="p-3">Email</th>
                   <th className="p-3">Rol</th>
                   <th className="p-3">Estado</th>
-                  <th className="p-3">Acciones</th>
+                  <th className="p-3 text-right">Acciones</th>
                 </tr>
               </thead>
               <tbody>
@@ -301,8 +305,8 @@ const UserManager = () => {
                       <tr
                         key={u.id}
                         className={`border-b border-health-border transition
-                          ${isDeleted 
-                            ? "bg-gray-100 text-gray-400" 
+                          ${isDeleted
+                            ? "bg-gray-100 text-gray-400"
                             : "hover:bg-gray-50"
                           }
                         `}
@@ -327,7 +331,7 @@ const UserManager = () => {
                             {u.role === "admin"
                               ? "Jefe Servicio"
                               : u.role === "supervisor"
-                              ? "Médico Jefe"
+                              ? "Jefe de Turno"
                               : "Residente"}
                           </span>
                         </td>
@@ -339,24 +343,29 @@ const UserManager = () => {
                            )}
                         </td>
                         <td className="p-3">
-                          <div className="flex gap-2">
-                            <button
-                              onClick={() => handleEditClick(u)}
-                              className={`cursor-pointer ${isDeleted ? 'text-gray-400 hover:text-gray-500' : 'text-blue-600 hover:text-blue-700'}`}
-                            >
-                              Editar
-                            </button>
-                            
-                            <button
-                              onClick={() => handleToggleStatusClick(u)}
-                              className={`cursor-pointer font-medium
-                                ${isDeleted 
-                                  ? 'text-green-600 hover:text-green-700' 
-                                  : 'text-red-600 hover:text-red-700'
-                                }`}
-                            >
-                              {isDeleted ? "Reactivar" : "Desactivar"}
-                            </button>
+                          <div className="flex gap-2 items-center justify-end">
+                            <Tooltip text="Editar">
+                              <button
+                                disabled={isDeleted}
+                                onClick={() => handleEditClick(u)}
+                                className={`${isDeleted ? 'text-gray-400' : 'cursor-pointer text-blue-600 hover:text-blue-700'} transition`}
+                              >
+                                <Icon name="edit" />
+                              </button>
+                            </Tooltip>
+
+                            <Tooltip text={isDeleted ? "Reactivar" : "Desactivar"}>
+                              <button
+                                onClick={() => handleToggleStatusClick(u)}
+                                className={`cursor-pointer font-medium transition
+                                  ${isDeleted
+                                    ? 'text-green-600 hover:text-green-700'
+                                    : 'text-red-600 hover:text-red-700'
+                                  }`}
+                              >
+                                <Icon name={isDeleted ? "check" : "ban"} />
+                              </button>
+                            </Tooltip>
                           </div>
                         </td>
                       </tr>
@@ -494,7 +503,7 @@ const UserManager = () => {
                 className="w-full bg-white border border-health-border rounded p-2 text-health-text h-10"
               >
                 <option value="resident">Médico Residente</option>
-                <option value="supervisor">Médico Jefe</option>
+                <option value="supervisor">Jefe de Turno</option>
                 <option value="admin">Jefe de Servicio (Admin)</option>
               </select>
             </div>

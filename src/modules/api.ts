@@ -69,6 +69,7 @@ class ApiClient {
         return {
           success: false,
           error: `HTTP ${response.status}: ${response.statusText}`,
+          data: await response.json() as unknown as T,
         };
       }
 
@@ -83,6 +84,7 @@ class ApiClient {
       const data = await response.json();
       return { success: true, data };
     } catch (error) {
+      console.error(JSON.stringify(error));
       return {
         success: false,
         error: error instanceof Error ? error.message : "Unknown error",

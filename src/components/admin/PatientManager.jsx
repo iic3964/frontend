@@ -136,7 +136,7 @@ const PatientManager = () => {
       // --- CLEAN PAYLOAD ---
       // Convert empty strings to null for numeric fields to avoid 422 errors
       const payload = { ...formData };
-      
+
       const numericFields = ["age", "height", "weight", "insurance_company_id"];
       numericFields.forEach((field) => {
         if (payload[field] === "" || payload[field] === undefined) {
@@ -275,7 +275,7 @@ const PatientManager = () => {
                       </td>
                       <td className="p-3">
                         <span className={`font-medium ${
-                            p.sex === 'M' ? 'text-blue-600' : 
+                            p.sex === 'M' ? 'text-blue-600' :
                             p.sex === 'F' ? 'text-pink-600' : 'text-gray-400'
                         }`}>
                             {formatSex(p.sex)}
@@ -455,7 +455,7 @@ const PatientManager = () => {
             <div className="border-t border-white/20 pt-6 mt-6">
               <div className="flex justify-between items-center mb-4">
                 <h3 className="text-xl font-semibold">Historial de Episodios Clínicos</h3>
-                
+
               </div>
 
               {loadingHistory ? (
@@ -474,7 +474,7 @@ const PatientManager = () => {
                         <th className="p-3">ID Episodio</th>
                         <th className="p-3">Fecha</th>
                         <th className="p-3">Médico Residente</th>
-                        <th className="p-3">Médico Supervisor</th>
+                        <th className="p-3">Jefe de Turno</th>
                         <th className="p-3">Ley Urgencia</th>
                         <th className="p-3">Acciones</th>
                       </tr>
@@ -533,7 +533,7 @@ const PatientManager = () => {
         </form>
       )}
 
-      
+
     </div>
   );
 };
