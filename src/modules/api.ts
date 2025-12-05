@@ -327,9 +327,20 @@ class ApiClient {
       });
 
       if (!response.ok) {
+        // Try to get error details from response body
+        let errorDetail = `HTTP ${response.status}: ${response.statusText}`;
+        try {
+          const errorData = await response.json();
+          if (errorData.detail) {
+            errorDetail = errorData.detail;
+          }
+        } catch {
+          // If JSON parsing fails, use the default error
+        }
+
         return {
           success: false,
-          error: `HTTP ${response.status}: ${response.statusText}`,
+          error: errorDetail,
         };
       }
 
