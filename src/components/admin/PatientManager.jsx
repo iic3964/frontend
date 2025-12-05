@@ -1,6 +1,9 @@
 import { useEffect, useState } from "react";
 import { apiClient } from "../../modules/api";
 import AutocompleteSelect from "../admin/AutocompleteSelect";
+import PaginatedTable from "../shared/PaginatedTable";
+import Icon from "../UI/Icon";
+import Tooltip from "../UI/Tooltip";
 
 const PatientManager = () => {
   const [view, setView] = useState("list"); // 'list', 'create', 'edit', 'episode'
@@ -10,8 +13,18 @@ const PatientManager = () => {
   const [error, setError] = useState(null);
   const [selectedPatient, setSelectedPatient] = useState(null);
   const [searchQuery, setSearchQuery] = useState("");
+  const [debouncedSearch, setDebouncedSearch] = useState("");
+  const [total, setTotal] = useState(0);
   const [clinicalHistory, setClinicalHistory] = useState([]);
   const [loadingHistory, setLoadingHistory] = useState(false);
+
+  // Pagination state
+  const [currentPage, setCurrentPage] = useState(1);
+  const [pageSize, setPageSize] = useState(10);
+
+  // Pagination for clinical history
+  const [historyPage, setHistoryPage] = useState(1);
+  const [historyPageSize, setHistoryPageSize] = useState(10);
 
   // Form state
   const [formData, setFormData] = useState({
@@ -26,8 +39,28 @@ const PatientManager = () => {
     insurance_company_id: "",
   });
 
+  // Debounce search query
+  useEffect(() => {
+    const timer = setTimeout(() => {
+      setDebouncedSearch(searchQuery);
+    }, 500); // 500ms delay
+
+    return () => clearTimeout(timer);
+  }, [searchQuery]);
+
+  // Load patients when debounced search, page, or page size changes
   useEffect(() => {
     loadPatients();
+  }, [currentPage, pageSize, debouncedSearch]);
+
+  // Reset to page 1 when debounced search changes
+  useEffect(() => {
+    if (debouncedSearch !== searchQuery) return; // Only reset when debounce completes
+    setCurrentPage(1);
+  }, [debouncedSearch]);
+
+  // Load insurance companies once on mount
+  useEffect(() => {
     loadInsuranceCompanies();
   }, []);
 
@@ -47,9 +80,16 @@ const PatientManager = () => {
     setLoading(true);
     setError(null);
     try {
-      const resp = await apiClient.getPatients();
-      if (resp.success && resp.data && Array.isArray(resp.data.patients)) {
-        setPatients(resp.data.patients);
+      const resp = await apiClient.getPatients({
+        page: currentPage,
+        page_size: pageSize,
+        search: debouncedSearch || undefined,
+      });
+      console.log("Patients API response:", resp);
+      if (resp.success && resp.data) {
+        console.log("Patients results:", resp.data.results);
+        setPatients(resp.data.results);
+        setTotal(resp.data.total);
       } else {
         setError(resp.error || "Failed to load patients");
       }
@@ -63,13 +103,17 @@ const PatientManager = () => {
   const loadClinicalHistory = async (patientId) => {
     setLoadingHistory(true);
     try {
+      console.log("Loading clinical history for patient:", patientId);
       const resp = await apiClient.getClinicalAttentionHistory({
         patient_ids: [patientId],
       });
-      console.log("Clinical history response:", patientId);
+      console.log("Clinical history API response:", resp);
       if (resp.success && resp.data && resp.data.patients.length > 0) {
-        setClinicalHistory(resp.data.patients[0].attentions || []);
+        const attentions = resp.data.patients[0].attentions || [];
+        console.log("Setting clinical history:", attentions.length, "episodes");
+        setClinicalHistory(attentions);
       } else {
+        console.log("No clinical history found or API error");
         setClinicalHistory([]);
       }
     } catch (err) {
@@ -172,12 +216,11 @@ const PatientManager = () => {
     }
   };
 
-  // --- Filtering Logic ---
-  const filteredPatients = patients.filter((p) => {
-    const query = searchQuery.toLowerCase();
-    const fullName = `${p.first_name} ${p.last_name} ${p.mother_last_name || ""}`.toLowerCase();
-    return fullName.includes(query) || p.rut.toLowerCase().includes(query);
-  });
+  // Pagination for clinical history
+  const historyTotal = clinicalHistory.length;
+  const historyStartIndex = (historyPage - 1) * historyPageSize;
+  const historyEndIndex = historyStartIndex + historyPageSize;
+  const paginatedHistory = clinicalHistory.slice(historyStartIndex, historyEndIndex);
 
   // --- Helper for Sex Display ---
   const formatSex = (sex) => {
@@ -208,20 +251,12 @@ const PatientManager = () => {
 
         <div className="flex gap-3">
           {view === "list" && (
-            <>
-              <button
-                onClick={handleQuickEpisodeClick}
-                className="bg-gray-100 border border-health-border text-health-text px-4 py-2 rounded-lg hover:bg-gray-200 transition cursor-pointer"
-              >
-                + Crear Episodio
-              </button>
-              <button
-                onClick={handleCreateClick}
-                className="bg-health-accent text-white px-4 py-2 rounded-lg hover:bg-health-accent-dark transition cursor-pointer"
-              >
-                + Crear Paciente
-              </button>
-            </>
+            <button
+              onClick={handleCreateClick}
+              className="bg-health-accent text-white px-4 py-2 rounded-lg hover:bg-health-accent-dark transition cursor-pointer"
+            >
+              + Crear Paciente
+            </button>
           )}
           {view !== "list" && (
             <button
@@ -241,71 +276,114 @@ const PatientManager = () => {
       {/* List View */}
       {view === "list" && (
         <>
-          <div className="mb-4">
+          {/* Search Bar */}
+          <div className="mb-4 relative">
             <input
               type="text"
               placeholder="Buscar por nombre o RUT..."
               value={searchQuery}
               onChange={(e) => setSearchQuery(e.target.value)}
-              className="w-full bg-white border border-health-border rounded-lg p-3 text-health-text focus:outline-none focus:border-health-accent transition"
+              className="w-full bg-white border border-health-border rounded-lg px-4 py-2 pr-10 text-health-text focus:outline-none focus:border-health-accent transition"
             />
+            {loading && (
+              <div className="absolute right-3 top-1/2 -translate-y-1/2">
+                <svg
+                  className="animate-spin h-5 w-5 text-health-accent"
+                  xmlns="http://www.w3.org/2000/svg"
+                  fill="none"
+                  viewBox="0 0 24 24"
+                >
+                  <circle
+                    className="opacity-25"
+                    cx="12"
+                    cy="12"
+                    r="10"
+                    stroke="currentColor"
+                    strokeWidth="4"
+                  ></circle>
+                  <path
+                    className="opacity-75"
+                    fill="currentColor"
+                    d="M4 12a8 8 0 018-8V0C5.373 0 0 5.373 0 12h4zm2 5.291A7.962 7.962 0 014 12H0c0 3.042 1.135 5.824 3 7.938l3-2.647z"
+                  ></path>
+                </svg>
+              </div>
+            )}
           </div>
 
-          <div className="overflow-x-auto">
-            <table className="w-full text-left border-collapse">
-              <thead>
-                <tr className="border-b border-health-border text-health-text-muted">
-                  <th className="p-3">RUT</th>
-                  <th className="p-3">Nombre Completo</th>
-                  <th className="p-3">Sexo</th>
-                  <th className="p-3">Aseguradora</th>
-                  <th className="p-3">Acciones</th>
-                </tr>
-              </thead>
-              <tbody>
-                {filteredPatients.length > 0 ? (
-                  filteredPatients.map((p) => (
-                    <tr
-                      key={p.id}
-                      className="border-b border-health-border hover:bg-gray-50 transition"
+          <PaginatedTable
+            columns={[
+              {
+                key: "rut",
+                header: "RUT",
+                render: (p) => p.rut
+              },
+              {
+                key: "name",
+                header: "Nombre Completo",
+                render: (p) => `${p.first_name} ${p.last_name} ${p.mother_last_name || ""}`
+              },
+              {
+                key: "sex",
+                header: "Sexo",
+                render: (p) => (
+                  <span className={`font-medium ${
+                    p.sex === 'M' ? 'text-blue-600' :
+                    p.sex === 'F' ? 'text-pink-600' : 'text-gray-400'
+                  }`}>
+                    {formatSex(p.sex)}
+                  </span>
+                )
+              },
+              {
+                key: "age",
+                header: "Edad",
+                render: (u) => (u.age !== null && u.age !== undefined ? u.age : "N/A")
+              },
+              {
+                key: "weight",
+                header: "Peso (kg)",
+                render: (u) => (u.weight !== null && u.weight !== undefined ? u.weight : "N/A")
+              },
+              {
+                key: "height",
+                header: "Altura (cm)",
+                render: (u) => (u.height !== null && u.height !== undefined ? u.height : "N/A")
+              },
+              {
+                key: "episodes_count",
+                header: "# Episodios",
+                render: (u) => u.episodes_count || 0
+              },
+              {
+                key: "actions",
+                header: "",
+                render: (u) => (
+                  <Tooltip text="Ver Detalles (editar)">
+                    <button
+                      onClick={() => handleEditClick(u)}
+                      className="text-blue-600 hover:text-blue-700 cursor-pointer"
                     >
-                      <td className="p-3">{p.rut}</td>
-                      <td className="p-3">
-                        {`${p.first_name} ${p.last_name} ${p.mother_last_name || ""}`}
-                      </td>
-                      <td className="p-3">
-                        <span className={`font-medium ${
-                            p.sex === 'M' ? 'text-blue-600' :
-                            p.sex === 'F' ? 'text-pink-600' : 'text-gray-400'
-                        }`}>
-                            {formatSex(p.sex)}
-                        </span>
-                      </td>
-                      <td className="p-3">
-                        {p.insurance_company?.nombre_comercial ||
-                          p.insurance_company?.nombre_juridico ||
-                          "-"}
-                      </td>
-                      <td className="p-3">
-                        <button
-                          onClick={() => handleEditClick(p)}
-                          className="text-blue-600 hover:text-blue-700 mr-3 cursor-pointer"
-                        >
-                          Editar/Ver
-                        </button>
-                      </td>
-                    </tr>
-                  ))
-                ) : (
-                  <tr>
-                    <td colSpan="5" className="p-4 text-center text-health-text-muted">
-                      No se encontraron pacientes.
-                    </td>
-                  </tr>
-                )}
-              </tbody>
-            </table>
-          </div>
+                      <Icon name="edit" />
+                    </button>
+                  </Tooltip>
+                )
+              }
+            ]}
+            data={patients}
+            total={total}
+            currentPage={currentPage}
+            pageSize={pageSize}
+            onPageChange={(page) => setCurrentPage(page)}
+            onPageSizeChange={(size) => {
+              setPageSize(size);
+              setCurrentPage(1);
+            }}
+            loading={loading}
+            error={null}
+            emptyMessage="No se encontraron pacientes."
+            pageSizeOptions={[10, 20, 50]}
+          />
         </>
       )}
 
@@ -423,7 +501,7 @@ const PatientManager = () => {
                     name="sex"
                     value={formData.sex}
                     onChange={handleInputChange}
-                    className="w-full bg-white border border-health-border rounded p-2 text-health-text"
+                    className="w-full h-10 bg-white border border-health-border rounded p-2 text-health-text"
                 >
                     <option value="">Seleccionar...</option>
                     <option value="M">Masculino (M)</option>
@@ -458,76 +536,69 @@ const PatientManager = () => {
 
               </div>
 
-              {loadingHistory ? (
-                <div className="bg-gray-50 rounded-lg p-4 text-center text-health-text-muted border border-health-border">
-                  <p>Cargando historial...</p>
-                </div>
-              ) : clinicalHistory.length === 0 ? (
-                <div className="bg-gray-50 rounded-lg p-4 text-center text-health-text-muted border border-health-border">
-                  <p>No hay episodios clínicos registrados para este paciente.</p>
-                </div>
-              ) : (
-                <div className="overflow-x-auto">
-                  <table className="w-full text-left border-collapse bg-white rounded-lg overflow-hidden">
-                    <thead>
-                      <tr className="bg-gray-100 border-b border-health-border text-health-text-muted text-sm">
-                        <th className="p-3">ID Episodio</th>
-                        <th className="p-3">Fecha</th>
-                        <th className="p-3">Médico Residente</th>
-                        <th className="p-3">Jefe de Turno</th>
-                        <th className="p-3">Ley Urgencia</th>
-                        <th className="p-3">Acciones</th>
-                      </tr>
-                    </thead>
-                    <tbody>
-                      {clinicalHistory.map((attention) => (
-                        <tr
-                          key={attention.id}
-                          className="border-b border-health-border hover:bg-gray-50 transition"
-                        >
-                          <td className="p-3 text-sm">
-                            {attention.id_episodio || "No Informado"}
-                          </td>
-                          <td className="p-3 text-sm">
-                            {attention.created_at
-                              ? new Date(attention.created_at).toLocaleDateString("es-CL", {
-                                  year: "numeric",
-                                  month: "2-digit",
-                                  day: "2-digit",
-                                  hour: "2-digit",
-                                  minute: "2-digit",
-                                })
-                              : "-"}
-                          </td>
-                          <td className="p-3 text-sm">
-                            {attention.resident_doctor_name || "-"}
-                          </td>
-                          <td className="p-3 text-sm">
-                            {attention.supervisor_doctor_name || "-"}
-                          </td>
-                          <td className="p-3 text-sm">
-                            {attention.applies_urgency_law === null ? (
-                              <span className="text-gray-400">-</span>
-                            ) : attention.applies_urgency_law ? (
-                              <span className="text-green-600 font-semibold">Sí</span>
-                            ) : (
-                              <span className="text-red-600 font-semibold">No</span>
-                            )}
-                          </td>
-                          <td className="p-3 text-sm">
-                            <a
-                              href={`/clinical_attentions/details/${attention.id}`}
-                              className="text-blue-600 hover:text-blue-700 font-medium underline"
-                            >
-                              Ver
-                            </a>
-                          </td>
-                        </tr>
-                      ))}
-                    </tbody>
-                  </table>
-                </div>
-              )}
+              <PaginatedTable
+                columns={[
+                  {
+                    key: "id_episodio",
+                    header: "# Episodio",
+                    render: (attention) => attention.id_episodio || "-",
+                    cellClassName: "px-4 py-3 text-sm"
+                  },
+                  {
+                    key: "created_at",
+                    header: "Fecha",
+                    render: (attention) => attention.created_at
+                      ? new Date(attention.created_at).toLocaleDateString("es-CL", {
+                          year: "numeric",
+                          month: "2-digit",
+                          day: "2-digit",
+                        })
+                      : "-",
+                    cellClassName: "px-4 py-3 text-sm"
+                  },
+                  {
+                    key: "urgency",
+                    header: "Ley Urgencia",
+                    render: (attention) => {
+                      if (attention.applies_urgency_law === null) {
+                        return <span className="text-gray-400">-</span>;
+                      }
+                      return attention.applies_urgency_law ? (
+                        <span className="text-green-600 font-semibold">Sí</span>
+                      ) : (
+                        <span className="text-red-600 font-semibold">No</span>
+                      );
+                    },
+                    cellClassName: "px-4 py-3 text-sm"
+                  },
+                  {
+                    key: "actions",
+                    header: "Acciones",
+                    render: (attention) => (
+                      <a
+                        href={`/clinical_attentions/details/${attention.id}`}
+                        className="text-blue-600 hover:text-blue-700 font-medium underline"
+                      >
+                        Ver
+                      </a>
+                    ),
+                    cellClassName: "px-4 py-3 text-sm"
+                  }
+                ]}
+                data={paginatedHistory}
+                total={historyTotal}
+                currentPage={historyPage}
+                pageSize={historyPageSize}
+                onPageChange={(page) => setHistoryPage(page)}
+                onPageSizeChange={(size) => {
+                  setHistoryPageSize(size);
+                  setHistoryPage(1);
+                }}
+                loading={loadingHistory}
+                error={null}
+                emptyMessage="No hay episodios clínicos registrados para este paciente."
+                pageSizeOptions={[5]}
+              />
             </div>
           )}
         </form>

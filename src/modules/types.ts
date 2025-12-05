@@ -55,6 +55,13 @@ export type DoctorWithId = Doctor & {
 
 export type PatientWithId = Patient & {
   id: string;
+  episodes_count?: number;
+  insurance_company?: {
+    id: number;
+    nombre_comercial?: string;
+    nombre_juridico: string;
+    rut?: string;
+  };
 };
 
 export interface CreatePatientRequest {

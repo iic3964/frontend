@@ -165,8 +165,18 @@ class ApiClient {
   }
 
   // Patients
-  async getPatients(): Promise<ApiResponse<{ patients: PatientWithId[] }>> {
-    return this.request<{ patients: PatientWithId[] }>("/patients/patients");
+  async getPatients(params?: {
+    page?: number;
+    page_size?: number;
+    search?: string;
+  }): Promise<ApiResponse<PaginatedResponse<PatientWithId>>> {
+    const queryParams = new URLSearchParams();
+    if (params?.page) queryParams.append("page", params.page.toString());
+    if (params?.page_size) queryParams.append("page_size", params.page_size.toString());
+    if (params?.search) queryParams.append("search", params.search);
+
+    const url = `/patients/patients${queryParams.toString() ? `?${queryParams.toString()}` : ""}`;
+    return this.request<PaginatedResponse<PatientWithId>>(url);
   }
 
   async getPatient(id: string): Promise<ApiResponse<PatientWithId>> {
@@ -193,15 +203,24 @@ class ApiClient {
   }
 
   // Clinical Attentions
-  async getClinicalAttentions(pagination?: {
+  async getClinicalAttentions(params?: {
     page?: number;
     page_size?: number;
+    patient_search?: string;
+    doctor_search?: string;
+    medic_approved?: string;
+    supervisor_approved?: string;
   }): Promise<ApiResponse<PaginatedResponse<ClinicalAttention>>> {
-    return this.request<PaginatedResponse<ClinicalAttention>>(
-      "/clinical_attentions",
-      {},
-      pagination
-    );
+    const queryParams = new URLSearchParams();
+    if (params?.page) queryParams.append("page", params.page.toString());
+    if (params?.page_size) queryParams.append("page_size", params.page_size.toString());
+    if (params?.patient_search) queryParams.append("patient_search", params.patient_search);
+    if (params?.doctor_search) queryParams.append("doctor_search", params.doctor_search);
+    if (params?.medic_approved) queryParams.append("medic_approved", params.medic_approved);
+    if (params?.supervisor_approved) queryParams.append("supervisor_approved", params.supervisor_approved);
+
+    const url = `/clinical_attentions${queryParams.toString() ? `?${queryParams.toString()}` : ""}`;
+    return this.request<PaginatedResponse<ClinicalAttention>>(url);
   }
 
   async createClinicalAttention(

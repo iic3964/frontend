@@ -8,48 +8,52 @@ import SupervisorActionCard from "./SupervisorActionCard";
 // =====================
 // PARSE CLINICAL SUMMARY TXT
 // =====================
-const parseClinicalSummary = (txt) => {
+export const parseClinicalSummary = (txt) => {
   if (!txt) return null;
 
-  const raw = txt
-    .split("=====")
-    .map((s) => s.trim())
-    .filter(Boolean);
+  try {
+    const raw = txt
+      .split("=====")
+      .map((s) => s.trim());
 
-  const output = {
-    triage: "",
-    motivoConsulta: "",
-    anamnesis: "",
-    signosVitalesRaw: "",
-    signosVitales: {},
-    hallazgos: "",
-    diagnostico: "",
-  };
+    const output = {
+      triage: "",
+      motivoConsulta: "",
+      anamnesis: "",
+      signosVitalesRaw: "",
+      signosVitales: {},
+      hallazgos: "",
+      diagnostico: "",
+    };
 
-  for (let i = 0; i < raw.length; i++) {
-    const block = raw[i].toLowerCase();
+    for (let i = 0; i < raw.length; i++) {
+      const block = raw[i].toLowerCase();
 
-    if (block === "triage") output.triage = raw[i + 1] || "";
-    if (block === "motivo de consulta")
-      output.motivoConsulta = raw[i + 1] || "";
-    if (block === "anamnesis") output.anamnesis = raw[i + 1] || "";
-    if (block === "signos vitales") output.signosVitalesRaw = raw[i + 1] || "";
-    if (block === "hallazgos clínicos") output.hallazgos = raw[i + 1] || "";
-    if (block === "diagnóstico presuntivo")
-      output.diagnostico = raw[i + 1] || "";
+      if (block === "triage") output.triage = raw[i + 1] || "";
+      if (block === "motivo de consulta")
+        output.motivoConsulta = raw[i + 1] || "";
+      if (block === "anamnesis") output.anamnesis = raw[i + 1] || "";
+      if (block === "signos vitales") output.signosVitalesRaw = raw[i + 1] || "";
+      if (block === "hallazgos clínicos") output.hallazgos = raw[i + 1] || "";
+      if (block === "diagnóstico presuntivo")
+        output.diagnostico = raw[i + 1] || "";
+    }
+
+    // Parse signos vitales
+    if (output.signosVitalesRaw) {
+      output.signosVitalesRaw.split("\n").forEach((l) => {
+        if (l.includes(":")) {
+          const [k, v] = l.split(":").map((x) => x.trim());
+          output.signosVitales[k] = v;
+        }
+      });
+    }
+
+    return output;
+  } catch (error) {
+    console.error("Error parsing clinical summary:", error);
+    return null;
   }
-
-  // Parse signos vitales
-  if (output.signosVitalesRaw) {
-    output.signosVitalesRaw.split("\n").forEach((l) => {
-      if (l.includes(":")) {
-        const [k, v] = l.split(":").map((x) => x.trim());
-        output.signosVitales[k] = v;
-      }
-    });
-  }
-
-  return output;
 };
 
 // =====================
@@ -559,8 +563,8 @@ export default function ClinicalAttentionDetail({ attentionId }) {
                 <span
                   className={`ml-2 rounded-md px-2 py-0.5 text-xs ${
                     ca.ai_confidence >= 0.8
-                      ? "bg-green-500/20 text-green-400"
-                      : "bg-yellow-500/20 text-yellow-300"
+                      ? "bg-green-500/20 text-black"
+                      : "bg-yellow-500/20 text-black"
                   }`}
                 >
                   {(ca.ai_confidence * 100).toFixed(0)}%
