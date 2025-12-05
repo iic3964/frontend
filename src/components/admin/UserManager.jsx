@@ -1,17 +1,21 @@
 import { useEffect, useState } from "react";
 import { apiClient } from "../../modules/api";
+import Icon from "../UI/Icon";
+import Tooltip from "../UI/Tooltip";
 
 const UserManager = () => {
   const [view, setView] = useState("list"); // 'list', 'create', 'edit'
   const [users, setUsers] = useState([]);
+  const [total, setTotal] = useState(0);
   const [loading, setLoading] = useState(false);
   const [error, setError] = useState(null);
   const [successMsg, setSuccessMsg] = useState(null);
   const [searchQuery, setSearchQuery] = useState("");
+  const [debouncedSearch, setDebouncedSearch] = useState("");
 
   // Pagination State
   const [currentPage, setCurrentPage] = useState(1);
-  const itemsPerPage = 10;
+  const [pageSize, setPageSize] = useState(10);
 
   // Selected user for editing
   const [selectedUser, setSelectedUser] = useState(null);
@@ -25,36 +29,38 @@ const UserManager = () => {
     password: "", // Only for create
   });
 
+  // Debounce search query
+  useEffect(() => {
+    const timer = setTimeout(() => {
+      setDebouncedSearch(searchQuery);
+    }, 500); // 500ms delay
+
+    return () => clearTimeout(timer);
+  }, [searchQuery]);
+
+  // Load users when debounced search, page, or page size changes
   useEffect(() => {
     loadUsers();
-  }, []);
+  }, [currentPage, pageSize, debouncedSearch]);
 
-  // Reset pagination when search query changes
+  // Reset to page 1 when debounced search changes
   useEffect(() => {
+    if (debouncedSearch !== searchQuery) return; // Only reset when debounce completes
     setCurrentPage(1);
-  }, [searchQuery]);
+  }, [debouncedSearch]);
 
   const loadUsers = async () => {
     setLoading(true);
     setError(null);
     try {
-      const resp = await apiClient.getUsers();
+      const resp = await apiClient.getUsers({
+        page: currentPage,
+        page_size: pageSize,
+        search: debouncedSearch || undefined,
+      });
       if (resp.success && resp.data) {
-        const residents = (resp.data.resident || []).map((u) => ({
-          ...u,
-          role: "resident",
-        }));
-        const supervisors = (resp.data.supervisor || []).map((u) => ({
-          ...u,
-          role: "supervisor",
-        }));
-        const admins = (resp.data.admin || []).map((u) => ({
-          ...u,
-          role: "admin",
-        }));
-        
-        // Combine all users. Backend sorts them by is_deleted ASC (active first)
-        setUsers([...admins, ...supervisors, ...residents]);
+        setUsers(resp.data.results);
+        setTotal(resp.data.total);
       } else {
         setError(resp.error || "Failed to load users");
       }
@@ -158,6 +164,9 @@ const UserManager = () => {
         };
 
         const resp = await apiClient.registerUser(payload);
+        if (!resp.success && resp.data) throw new Error({
+          "User already registered": "El email ya está registrado.",
+        }[resp.data.detail]);
         if (!resp.success) throw new Error(resp.error);
 
         setSuccessMsg("Usuario creado exitosamente.");
@@ -176,32 +185,17 @@ const UserManager = () => {
         setSuccessMsg(null);
       }, 3000);
     } catch (err) {
-      console.error(err);
       setError(err.message || "Error saving user");
     } finally {
       setLoading(false);
     }
   };
 
-  // --- Filtering & Pagination Logic ---
+  // --- Pagination Logic ---
 
-  const filteredUsers = users.filter((u) => {
-    const query = searchQuery.toLowerCase();
-    const fullName = `${u.first_name} ${u.last_name}`.toLowerCase();
-    return (
-      fullName.includes(query) ||
-      (u.email && u.email.toLowerCase().includes(query))
-    );
-  });
-
-  const totalPages = Math.ceil(filteredUsers.length / itemsPerPage);
-  const indexOfLastItem = currentPage * itemsPerPage;
-  const indexOfFirstItem = indexOfLastItem - itemsPerPage;
-  const currentUsers = filteredUsers.slice(indexOfFirstItem, indexOfLastItem);
-
-  const handlePageChange = (pageNumber) => {
-    setCurrentPage(pageNumber);
-  };
+  const totalPages = Math.ceil(total / pageSize);
+  const startRecord = total === 0 ? 0 : (currentPage - 1) * pageSize + 1;
+  const endRecord = Math.min(currentPage * pageSize, total);
 
   // --- Renders ---
 
@@ -272,46 +266,71 @@ const UserManager = () => {
       {/* List View */}
       {view === "list" && (
         <>
-          <div className="mb-4">
+          {/* Search Bar */}
+          <div className="mb-4 relative">
             <input
               type="text"
               placeholder="Buscar por nombre o email..."
               value={searchQuery}
               onChange={(e) => setSearchQuery(e.target.value)}
-              className="w-full bg-white border border-health-border rounded-lg p-3 text-health-text focus:outline-none focus:border-health-accent transition"
+              className="w-full bg-white border border-health-border rounded-lg px-4 py-2 pr-10 text-health-text focus:outline-none focus:border-health-accent transition"
             />
+            {loading && (
+              <div className="absolute right-3 top-1/2 -translate-y-1/2">
+                <svg
+                  className="animate-spin h-5 w-5 text-health-accent"
+                  xmlns="http://www.w3.org/2000/svg"
+                  fill="none"
+                  viewBox="0 0 24 24"
+                >
+                  <circle
+                    className="opacity-25"
+                    cx="12"
+                    cy="12"
+                    r="10"
+                    stroke="currentColor"
+                    strokeWidth="4"
+                  ></circle>
+                  <path
+                    className="opacity-75"
+                    fill="currentColor"
+                    d="M4 12a8 8 0 018-8V0C5.373 0 0 5.373 0 12h4zm2 5.291A7.962 7.962 0 014 12H0c0 3.042 1.135 5.824 3 7.938l3-2.647z"
+                  ></path>
+                </svg>
+              </div>
+            )}
           </div>
 
-          <div className="overflow-x-auto min-h-[400px]">
-            <table className="w-full text-left border-collapse">
-              <thead>
-                <tr className="border-b border-health-border text-health-text-muted">
-                  <th className="p-3">Nombre</th>
-                  <th className="p-3">Email</th>
-                  <th className="p-3">Rol</th>
-                  <th className="p-3">Estado</th>
-                  <th className="p-3">Acciones</th>
+          <div className="overflow-x-auto rounded-2xl border border-health-border">
+            <table className="w-full text-sm">
+              <thead className="bg-gray-50">
+                <tr className="[&>th]:px-4 [&>th]:py-3 text-left text-health-text [&>th]:whitespace-nowrap">
+                  <th>Nombre</th>
+                  <th>Email</th>
+                  <th>Rol</th>
+                  <th>Estado</th>
+                  <th className="text-right">Acciones</th>
                 </tr>
               </thead>
-              <tbody>
-                {currentUsers.length > 0 ? (
-                  currentUsers.map((u) => {
+              <tbody className="divide-y divide-health-border bg-white">
+                {users.length > 0 ? (
+                  users.map((u) => {
                     const isDeleted = u.is_deleted === true;
                     return (
                       <tr
                         key={u.id}
-                        className={`border-b border-health-border transition
-                          ${isDeleted 
-                            ? "bg-gray-100 text-gray-400" 
-                            : "hover:bg-gray-50"
+                        className={`transition
+                          ${isDeleted
+                            ? "bg-gray-100 text-gray-400"
+                            : "hover:bg-gray-50 text-health-text"
                           }
                         `}
                       >
-                        <td className="p-3">
+                        <td className="px-4 py-3">
                           {u.first_name} {u.last_name}
                         </td>
-                        <td className="p-3">{u.email || "-"}</td>
-                        <td className="p-3">
+                        <td className="px-4 py-3">{u.email || "-"}</td>
+                        <td className="px-4 py-3">
                           <span
                             className={`px-2 py-1 rounded text-xs font-semibold
                                   ${
@@ -327,36 +346,41 @@ const UserManager = () => {
                             {u.role === "admin"
                               ? "Jefe Servicio"
                               : u.role === "supervisor"
-                              ? "Médico Jefe"
+                              ? "Jefe de Turno"
                               : "Residente"}
                           </span>
                         </td>
-                        <td className="p-3">
+                        <td className="px-4 py-3">
                            {isDeleted ? (
                              <span className="text-xs font-bold text-red-500 bg-red-50 px-2 py-1 rounded">Inactivo</span>
                            ) : (
                              <span className="text-xs font-bold text-green-600 bg-green-50 px-2 py-1 rounded">Activo</span>
                            )}
                         </td>
-                        <td className="p-3">
-                          <div className="flex gap-2">
-                            <button
-                              onClick={() => handleEditClick(u)}
-                              className={`cursor-pointer ${isDeleted ? 'text-gray-400 hover:text-gray-500' : 'text-blue-600 hover:text-blue-700'}`}
-                            >
-                              Editar
-                            </button>
-                            
-                            <button
-                              onClick={() => handleToggleStatusClick(u)}
-                              className={`cursor-pointer font-medium
-                                ${isDeleted 
-                                  ? 'text-green-600 hover:text-green-700' 
-                                  : 'text-red-600 hover:text-red-700'
-                                }`}
-                            >
-                              {isDeleted ? "Reactivar" : "Desactivar"}
-                            </button>
+                        <td className="px-4 py-3 text-right whitespace-nowrap">
+                          <div className="flex gap-2 items-center justify-end">
+                            <Tooltip text="Editar">
+                              <button
+                                disabled={isDeleted}
+                                onClick={() => handleEditClick(u)}
+                                className={`${isDeleted ? 'text-gray-400' : 'cursor-pointer text-blue-600 hover:text-blue-700'} transition`}
+                              >
+                                <Icon name="edit" />
+                              </button>
+                            </Tooltip>
+
+                            <Tooltip text={isDeleted ? "Reactivar" : "Desactivar"}>
+                              <button
+                                onClick={() => handleToggleStatusClick(u)}
+                                className={`cursor-pointer font-medium transition
+                                  ${isDeleted
+                                    ? 'text-green-600 hover:text-green-700'
+                                    : 'text-red-600 hover:text-red-700'
+                                  }`}
+                              >
+                                <Icon name={isDeleted ? "check" : "ban"} />
+                              </button>
+                            </Tooltip>
                           </div>
                         </td>
                       </tr>
@@ -366,7 +390,7 @@ const UserManager = () => {
                   <tr>
                     <td
                       colSpan="5"
-                      className="p-4 text-center text-health-text-muted"
+                      className="text-center py-6 text-health-text-muted"
                     >
                       No se encontraron usuarios.
                     </td>
@@ -377,42 +401,51 @@ const UserManager = () => {
           </div>
 
           {/* Pagination Controls */}
-          {filteredUsers.length > itemsPerPage && (
-            <div className="flex justify-center items-center gap-2 mt-6">
+          <div className="flex items-center justify-between text-sm text-health-text-muted mt-4">
+            <div className="flex items-center gap-4">
+              <label className="flex items-center gap-2">
+                <span>Registros por página:</span>
+                <select
+                  className="rounded-lg bg-white border border-health-border px-3 py-1 outline-none text-health-text"
+                  value={pageSize}
+                  onChange={(e) => {
+                    setPageSize(+e.target.value);
+                    setCurrentPage(1);
+                  }}
+                >
+                  <option value={10}>10</option>
+                  <option value={20}>20</option>
+                  <option value={50}>50</option>
+                </select>
+              </label>
+
+              <p className="text-xs">
+                Mostrando {startRecord}-{endRecord} de {total}
+              </p>
+            </div>
+
+            <div className="flex items-center gap-2">
+              <span className="text-xs">
+                Página {currentPage} de {totalPages || 1}
+              </span>
+
               <button
-                onClick={() => handlePageChange(currentPage - 1)}
                 disabled={currentPage === 1}
-                className=" cursor-pointer px-3 py-1 rounded border border-health-border text-health-text-muted hover:bg-gray-100 disabled:opacity-50 disabled:cursor-not-allowed"
+                onClick={() => setCurrentPage(currentPage - 1)}
+                className="px-3 py-1 rounded-lg bg-white border border-health-border hover:bg-gray-50 disabled:opacity-50 text-health-text"
               >
                 Anterior
               </button>
 
-              {Array.from({ length: totalPages }, (_, i) => i + 1).map(
-                (number) => (
-                  <button
-                    key={number}
-                    onClick={() => handlePageChange(number)}
-                    className={` cursor-pointer w-8 h-8 rounded flex items-center justify-center text-sm font-medium transition-colors
-                            ${
-                              currentPage === number
-                                ? "bg-health-accent text-white"
-                                : "text-health-text hover:bg-gray-100"
-                            }`}
-                  >
-                    {number}
-                  </button>
-                )
-              )}
-
               <button
-                onClick={() => handlePageChange(currentPage + 1)}
-                disabled={currentPage === totalPages}
-                className="cursor-pointer px-3 py-1 rounded border border-health-border text-health-text-muted hover:bg-gray-100 disabled:opacity-50 disabled:cursor-not-allowed"
+                disabled={currentPage === totalPages || totalPages === 0}
+                onClick={() => setCurrentPage(currentPage + 1)}
+                className="px-3 py-1 rounded-lg bg-white border border-health-border hover:bg-gray-50 disabled:opacity-50 text-health-text"
               >
                 Siguiente
               </button>
             </div>
-          )}
+          </div>
         </>
       )}
 
@@ -494,7 +527,7 @@ const UserManager = () => {
                 className="w-full bg-white border border-health-border rounded p-2 text-health-text h-10"
               >
                 <option value="resident">Médico Residente</option>
-                <option value="supervisor">Médico Jefe</option>
+                <option value="supervisor">Jefe de Turno</option>
                 <option value="admin">Jefe de Servicio (Admin)</option>
               </select>
             </div>

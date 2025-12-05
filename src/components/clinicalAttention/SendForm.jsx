@@ -270,7 +270,7 @@ const isFormValid =
         {/* Supervisor - Updated logic */}
         <div className="flex flex-col gap-2">
           <label className="text-sm text-health-text-muted">
-            Médico Supervisor *
+            Jefe de Turno *
           </label>
           <select
             value={supervisorDoctorId}

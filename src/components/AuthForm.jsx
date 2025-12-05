@@ -181,7 +181,7 @@ export default function AuthForm({ mode }) {
                 required
               >
                 <option value="resident">Médico Residente</option>
-                <option value="supervisor">Médico Jefe</option>
+                <option value="supervisor">Jefe de Turno</option>
                 <option value="admin">Jefe de Servicio</option>
               </select>
               {/* Custom Arrow Icon for Select */}

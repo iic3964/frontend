@@ -69,6 +69,7 @@ class ApiClient {
         return {
           success: false,
           error: `HTTP ${response.status}: ${response.statusText}`,
+          data: await response.json() as unknown as T,
         };
       }
 
@@ -83,6 +84,7 @@ class ApiClient {
       const data = await response.json();
       return { success: true, data };
     } catch (error) {
+      console.error(JSON.stringify(error));
       return {
         success: false,
         error: error instanceof Error ? error.message : "Unknown error",
@@ -115,10 +117,18 @@ class ApiClient {
     });
   }
 
-  async getUsers(): Promise<ApiResponse<UserWithRole[]>> {
-    return this.request<UserWithRole[]>("/users/", {
-      method: "GET",
-    });
+  async getUsers(params?: {
+    page?: number;
+    page_size?: number;
+    search?: string;
+  }): Promise<ApiResponse<PaginatedResponse<UserWithRole>>> {
+    return this.request<PaginatedResponse<UserWithRole>>(
+      "/users/",
+      {
+        method: "GET",
+      },
+      params
+    );
   }
 
   async updateUser(
