@@ -2,6 +2,7 @@ import { useEffect, useState } from "react";
 import { apiClient } from "../../modules/api";
 import Icon from "../UI/Icon";
 import Tooltip from "../UI/Tooltip";
+import PaginatedTable from "../shared/PaginatedTable";
 
 const UserManager = () => {
   const [view, setView] = useState("list"); // 'list', 'create', 'edit'
@@ -191,17 +192,6 @@ const UserManager = () => {
     }
   };
 
-  // --- Pagination Logic ---
-
-  const totalPages = Math.ceil(total / pageSize);
-  const startRecord = total === 0 ? 0 : (currentPage - 1) * pageSize + 1;
-  const endRecord = Math.min(currentPage * pageSize, total);
-
-  // --- Renders ---
-
-  if (loading && view === "list" && users.length === 0)
-    return <div className="text-health-text">Loading...</div>;
-
   return (
     <div className="bg-health-card p-6 rounded-xl border border-health-border text-health-text">
       {/* Header */}
@@ -301,151 +291,106 @@ const UserManager = () => {
             )}
           </div>
 
-          <div className="overflow-x-auto rounded-2xl border border-health-border">
-            <table className="w-full text-sm">
-              <thead className="bg-gray-50">
-                <tr className="[&>th]:px-4 [&>th]:py-3 text-left text-health-text [&>th]:whitespace-nowrap">
-                  <th>Nombre</th>
-                  <th>Email</th>
-                  <th>Rol</th>
-                  <th>Estado</th>
-                  <th className="text-right">Acciones</th>
-                </tr>
-              </thead>
-              <tbody className="divide-y divide-health-border bg-white">
-                {users.length > 0 ? (
-                  users.map((u) => {
-                    const isDeleted = u.is_deleted === true;
-                    return (
-                      <tr
-                        key={u.id}
-                        className={`transition
-                          ${isDeleted
-                            ? "bg-gray-100 text-gray-400"
-                            : "hover:bg-gray-50 text-health-text"
-                          }
-                        `}
-                      >
-                        <td className="px-4 py-3">
-                          {u.first_name} {u.last_name}
-                        </td>
-                        <td className="px-4 py-3">{u.email || "-"}</td>
-                        <td className="px-4 py-3">
-                          <span
-                            className={`px-2 py-1 rounded text-xs font-semibold
-                                  ${
-                                    isDeleted
-                                      ? "bg-gray-200 text-gray-500"
-                                      : u.role === "admin"
-                                      ? "bg-purple-100 text-purple-700"
-                                      : u.role === "supervisor"
-                                      ? "bg-blue-100 text-blue-700"
-                                      : "bg-green-100 text-green-700"
-                                  }`}
-                          >
-                            {u.role === "admin"
-                              ? "Jefe Servicio"
-                              : u.role === "supervisor"
-                              ? "Jefe de Turno"
-                              : "Residente"}
-                          </span>
-                        </td>
-                        <td className="px-4 py-3">
-                           {isDeleted ? (
-                             <span className="text-xs font-bold text-red-500 bg-red-50 px-2 py-1 rounded">Inactivo</span>
-                           ) : (
-                             <span className="text-xs font-bold text-green-600 bg-green-50 px-2 py-1 rounded">Activo</span>
-                           )}
-                        </td>
-                        <td className="px-4 py-3 text-right whitespace-nowrap">
-                          <div className="flex gap-2 items-center justify-end">
-                            <Tooltip text="Editar">
-                              <button
-                                disabled={isDeleted}
-                                onClick={() => handleEditClick(u)}
-                                className={`${isDeleted ? 'text-gray-400' : 'cursor-pointer text-blue-600 hover:text-blue-700'} transition`}
-                              >
-                                <Icon name="edit" />
-                              </button>
-                            </Tooltip>
-
-                            <Tooltip text={isDeleted ? "Reactivar" : "Desactivar"}>
-                              <button
-                                onClick={() => handleToggleStatusClick(u)}
-                                className={`cursor-pointer font-medium transition
-                                  ${isDeleted
-                                    ? 'text-green-600 hover:text-green-700'
-                                    : 'text-red-600 hover:text-red-700'
-                                  }`}
-                              >
-                                <Icon name={isDeleted ? "check" : "ban"} />
-                              </button>
-                            </Tooltip>
-                          </div>
-                        </td>
-                      </tr>
-                    );
-                  })
-                ) : (
-                  <tr>
-                    <td
-                      colSpan="5"
-                      className="text-center py-6 text-health-text-muted"
+          <PaginatedTable
+            columns={[
+              {
+                key: "name",
+                header: "Nombre",
+                render: (u) => `${u.first_name} ${u.last_name}`
+              },
+              {
+                key: "email",
+                header: "Email",
+                render: (u) => u.email || "-"
+              },
+              {
+                key: "role",
+                header: "Rol",
+                render: (u) => {
+                  const isDeleted = u.is_deleted === true;
+                  return (
+                    <span
+                      className={`px-2 py-1 rounded text-xs font-semibold
+                            ${
+                              isDeleted
+                                ? "bg-gray-200 text-gray-500"
+                                : u.role === "admin"
+                                ? "bg-purple-100 text-purple-700"
+                                : u.role === "supervisor"
+                                ? "bg-blue-100 text-blue-700"
+                                : "bg-green-100 text-green-700"
+                            }`}
                     >
-                      No se encontraron usuarios.
-                    </td>
-                  </tr>
-                )}
-              </tbody>
-            </table>
-          </div>
+                      {u.role === "admin"
+                        ? "Jefe Servicio"
+                        : u.role === "supervisor"
+                        ? "Jefe de Turno"
+                        : "Residente"}
+                    </span>
+                  );
+                }
+              },
+              {
+                key: "status",
+                header: "Estado",
+                render: (u) => {
+                  const isDeleted = u.is_deleted === true;
+                  return isDeleted ? (
+                    <span className="text-xs font-bold text-red-500 bg-red-50 px-2 py-1 rounded">Inactivo</span>
+                  ) : (
+                    <span className="text-xs font-bold text-green-600 bg-green-50 px-2 py-1 rounded">Activo</span>
+                  );
+                }
+              },
+              {
+                key: "actions",
+                header: "",
+                render: (u) => {
+                  const isDeleted = u.is_deleted === true;
+                  return (
+                    <div className="flex gap-2 items-center justify-end">
+                      <Tooltip text="Editar">
+                        <button
+                          disabled={isDeleted}
+                          onClick={() => handleEditClick(u)}
+                          className={`${isDeleted ? 'text-gray-400' : 'cursor-pointer text-blue-600 hover:text-blue-700'} transition`}
+                        >
+                          <Icon name="edit" />
+                        </button>
+                      </Tooltip>
 
-          {/* Pagination Controls */}
-          <div className="flex items-center justify-between text-sm text-health-text-muted mt-4">
-            <div className="flex items-center gap-4">
-              <label className="flex items-center gap-2">
-                <span>Registros por página:</span>
-                <select
-                  className="rounded-lg bg-white border border-health-border px-3 py-1 outline-none text-health-text"
-                  value={pageSize}
-                  onChange={(e) => {
-                    setPageSize(+e.target.value);
-                    setCurrentPage(1);
-                  }}
-                >
-                  <option value={10}>10</option>
-                  <option value={20}>20</option>
-                  <option value={50}>50</option>
-                </select>
-              </label>
-
-              <p className="text-xs">
-                Mostrando {startRecord}-{endRecord} de {total}
-              </p>
-            </div>
-
-            <div className="flex items-center gap-2">
-              <span className="text-xs">
-                Página {currentPage} de {totalPages || 1}
-              </span>
-
-              <button
-                disabled={currentPage === 1}
-                onClick={() => setCurrentPage(currentPage - 1)}
-                className="px-3 py-1 rounded-lg bg-white border border-health-border hover:bg-gray-50 disabled:opacity-50 text-health-text"
-              >
-                Anterior
-              </button>
-
-              <button
-                disabled={currentPage === totalPages || totalPages === 0}
-                onClick={() => setCurrentPage(currentPage + 1)}
-                className="px-3 py-1 rounded-lg bg-white border border-health-border hover:bg-gray-50 disabled:opacity-50 text-health-text"
-              >
-                Siguiente
-              </button>
-            </div>
-          </div>
+                      <Tooltip text={isDeleted ? "Reactivar" : "Desactivar"}>
+                        <button
+                          onClick={() => handleToggleStatusClick(u)}
+                          className={`cursor-pointer font-medium transition
+                            ${isDeleted
+                              ? 'text-green-600 hover:text-green-700'
+                              : 'text-red-600 hover:text-red-700'
+                            }`}
+                        >
+                          <Icon name={isDeleted ? "check" : "ban"} />
+                        </button>
+                      </Tooltip>
+                    </div>
+                  );
+                },
+                cellClassName: "px-4 py-3 text-right whitespace-nowrap"
+              }
+            ]}
+            data={users}
+            total={total}
+            currentPage={currentPage}
+            pageSize={pageSize}
+            onPageChange={(page) => setCurrentPage(page)}
+            onPageSizeChange={(size) => {
+              setPageSize(size);
+              setCurrentPage(1);
+            }}
+            loading={loading}
+            error={null}
+            emptyMessage="No se encontraron usuarios."
+            pageSizeOptions={[10, 20, 50]}
+          />
         </>
       )}
 
