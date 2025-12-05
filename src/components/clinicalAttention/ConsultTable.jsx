@@ -1,6 +1,7 @@
 import { useEffect, useState } from "react";
 import { apiClient } from "../../modules/api";
 import PaginatedTable from "../shared/PaginatedTable";
+import CloseEpisodeModal from "../UI/CloseEpisodeModal";
 import Icon from "../UI/Icon";
 import Tooltip from "../UI/Tooltip";
 import { parseClinicalSummary } from "./Detail";
@@ -16,6 +17,11 @@ export default function ConsultTable() {
   // Session State
   const [userRole, setUserRole] = useState(null);
   const [userFullName, setUserFullName] = useState("");
+  const [userId, setUserId] = useState(null);
+
+  // Close Episode Modal State
+  const [closeModalOpen, setCloseModalOpen] = useState(false);
+  const [episodeToClose, setEpisodeToClose] = useState(null);
 
   // --- FILTERS STATE ---
   const [filters, setFilters] = useState({
@@ -48,6 +54,7 @@ export default function ConsultTable() {
 
           setUserRole(role);
           setUserFullName(fullName);
+          setUserId(session.user?.id);
         }
       }
     } catch (e) {
@@ -88,6 +95,7 @@ export default function ConsultTable() {
         doctor_search: debouncedDoctor || undefined,
         medic_approved: filters.status !== "all" ? filters.status : undefined,
         supervisor_approved: filters.supervisorStatus !== "all" ? filters.supervisorStatus : undefined,
+        current_user_id: userId || undefined,
       });
 
       if (response.success && response.data) {
@@ -104,8 +112,10 @@ export default function ConsultTable() {
   };
 
   useEffect(() => {
-    fetchData();
-  }, [currentPage, pageSize, debouncedPatient, debouncedDoctor, filters.status, filters.supervisorStatus]);
+    if (userId) {
+      fetchData();
+    }
+  }, [currentPage, pageSize, debouncedPatient, debouncedDoctor, filters.status, filters.supervisorStatus, userId]);
 
   // --- INLINE EDIT HANDLER FOR PERTINENCIA ---
   const handlePertinenciaChange = async (id, newValue) => {
@@ -130,6 +140,56 @@ export default function ConsultTable() {
     } catch (e) {
       setClinicalAttentions(previousData);
       alert("Error de conexión");
+    }
+  };
+
+  // --- CLOSE/REOPEN HANDLERS ---
+  const handleCloseEpisode = (episodeId) => {
+    if (!userId) {
+      alert("Error: No se pudo obtener el ID del usuario");
+      return;
+    }
+    setEpisodeToClose(episodeId);
+    setCloseModalOpen(true);
+  };
+
+  const handleConfirmClose = async (closingReason) => {
+    try {
+      const response = await apiClient.closeEpisode(episodeToClose, userId, closingReason);
+      if (response.success) {
+        alert("Episodio cerrado exitosamente");
+        fetchData(); // Refresh the table
+      } else {
+        alert(response.error || "Error al cerrar el episodio");
+      }
+    } catch (e) {
+      alert("Error de conexión al cerrar el episodio");
+    } finally {
+      setCloseModalOpen(false);
+      setEpisodeToClose(null);
+    }
+  };
+
+  const handleReopenEpisode = async (episodeId) => {
+    if (!userId) {
+      alert("Error: No se pudo obtener el ID del usuario");
+      return;
+    }
+
+    if (!confirm("¿Está seguro que desea reabrir este episodio?")) {
+      return;
+    }
+
+    try {
+      const response = await apiClient.reopenEpisode(episodeId, userId);
+      if (response.success) {
+        alert("Episodio reabierto exitosamente");
+        fetchData(); // Refresh the table
+      } else {
+        alert(response.error || "Error al reabrir el episodio");
+      }
+    } catch (e) {
+      alert("Error de conexión al reabrir el episodio");
     }
   };
 
@@ -167,10 +227,78 @@ export default function ConsultTable() {
   // Build columns array dynamically based on userRole
   const columns = [
     {
+      key: "actions",
+      header: "",
+      render: (r) => (
+        <div className="flex items-center space-x-2">
+          <Tooltip text="Ver Detalle">
+            <a
+              href={`/clinical_attentions/details/${r.id}`}
+              className="text-health-accent hover:text-health-accent-dark"
+            >
+              <Icon name="edit" />
+            </a>
+          </Tooltip>
+
+          {!r.is_closed && (
+            <Tooltip text="Cerrar Episodio">
+              <button
+                onClick={(e) => {
+                  e.preventDefault();
+                  handleCloseEpisode(r.id);
+                }}
+                className="text-gray-600 hover:text-gray-800"
+              >
+                <Icon name="lock" />
+              </button>
+            </Tooltip>
+          )}
+
+          {r.is_closed && userRole === "admin" && (
+            <Tooltip text="Reabrir Episodio">
+              <button
+                onClick={(e) => {
+                  e.preventDefault();
+                  handleReopenEpisode(r.id);
+                }}
+                className="text-blue-600 hover:text-blue-800"
+              >
+                <Icon name="unlock" />
+              </button>
+            </Tooltip>
+          )}
+        </div>
+      ),
+      cellClassName: "px-0 pl-2 py-3 whitespace-nowrap"
+    },
+    {
+      key: "closed_status",
+      header: "Estado",
+      render: (r) => {
+        if (r.is_closed) {
+          return (
+            <Tooltip text={r.closing_reason || "Sin razón especificada"}>
+              <span className="inline-flex items-center px-2 py-1 rounded-md text-xs font-medium bg-gray-200 text-gray-700">
+                <Icon name="lock" className="mr-1 w-3 h-3" />
+                Cerrado
+              </span>
+            </Tooltip>
+          );
+        }
+        return (
+          <span className="inline-flex items-center px-2 py-1 rounded-md text-xs font-medium bg-green-100 text-green-700">
+            <Icon name="unlock" className="mr-1 w-3 h-3" />
+            Abierto
+          </span>
+        );
+      },
+      cellClassName: "pl-4 py-3 whitespace-nowrap"
+    },
+    {
       key: "created_at",
       header: "Fecha",
       render: (r) => formatDate(r.created_at),
-      cellClassName: "px-4 py-3 whitespace-nowrap"
+      cellClassName: "pl-4 py-3 whitespace-nowrap"
     },
     {
       key: "id_episodio",
@@ -194,17 +322,7 @@ export default function ConsultTable() {
       key: "urgency_law",
       header: "Ley Urgencia",
       render: (r) => {
-        let doesUrgencyLawApply = r.urgency_law;
-
-        if (r.urgency_law !== null) {
-          if (r.medic_approved === null) {
-            doesUrgencyLawApply = null;
-          } else {
-            doesUrgencyLawApply = r.medic_approved ? r.ai_result : !r.ai_result;
-
-            if (r.supervisor_approved === false) doesUrgencyLawApply = !doesUrgencyLawApply;
-          }
-        }
+        const doesUrgencyLawApply = r.applies_urgency_law;
 
         return (
           <span
@@ -297,7 +415,7 @@ export default function ConsultTable() {
               ? "Objetado"
               : isSupervisorRatified
               ? "Ratificado"
-              : "Sin observaciones"}
+              : "Sin obs."}
           </span>
         );
       },
@@ -309,7 +427,12 @@ export default function ConsultTable() {
       key: "pertinencia",
       header: "Pertinencia",
       render: (r) => {
+        const doesUrgencyLawApply = r.applies_urgency_law;
+
+        if (!doesUrgencyLawApply) return null;
+
         if (userRole === "admin") {
+
           return (
             <select
               value={r.pertinencia === null ? "pending" : r.pertinencia ? "true" : "false"}
@@ -321,10 +444,10 @@ export default function ConsultTable() {
               className={`rounded-md px-2 py-1 text-xs font-bold border cursor-pointer outline-none transition-colors appearance-none pr-6 bg-no-repeat bg-right
                 ${
                   r.pertinencia === true
-                    ? "bg-blue-50 text-blue-700 border-blue-200 hover:bg-blue-100"
+                  ? "bg-gray-100 text-gray-700 border-gray-200 hover:bg-gray-200"
                     : r.pertinencia === false
-                    ? "bg-gray-100 text-gray-700 border-gray-200 hover:bg-gray-200"
-                    : "bg-yellow-50 text-yellow-700 border-yellow-200 hover:bg-yellow-100"
+                    ? "bg-blue-50 text-blue-700 border-blue-200 hover:bg-blue-100"
+                      : "bg-yellow-50 text-yellow-700 border-yellow-200 hover:bg-yellow-100"
                 }`}
               style={{ backgroundImage: `url("data:image/svg+xml,%3csvg xmlns='http://www.w3.org/2000/svg' fill='none' viewBox='0 0 20 20'%3e%3cpath stroke='%236b7280' stroke-linecap='round' stroke-linejoin='round' stroke-width='1.5' d='M6 8l4 4 4-4'/%3e%3c/svg%3e")`, backgroundSize: "1.25em" }}
             >
@@ -338,9 +461,9 @@ export default function ConsultTable() {
             <span
               className={`rounded-md px-2 py-1 text-xs font-medium ${
                 r.pertinencia === true
-                  ? "bg-blue-50 text-blue-700"
-                  : r.pertinencia === false
-                  ? "bg-gray-100 text-gray-600"
+                ? "bg-gray-100 text-gray-600"
+                : r.pertinencia === false
+                ? "bg-blue-50 text-blue-700"
                   : "bg-yellow-50 text-yellow-700"
               }`}
             >
@@ -377,25 +500,14 @@ export default function ConsultTable() {
     });
   }
 
-  // Add actions column
-  columns.push({
-    key: "actions",
-    header: "",
-    render: (r) => (
-      <Tooltip text="Ver Detalle">
-        <a
-          href={`/clinical_attentions/details/${r.id}`}
-          className="text-health-accent hover:underline font-medium"
-        >
-          <Icon name="edit" />
-        </a>
-      </Tooltip>
-    ),
-    cellClassName: "px-4 py-3 whitespace-nowrap"
-  });
-
   return (
     <div className="space-y-6">
+      {/* Close Episode Modal */}
+      <CloseEpisodeModal
+        isOpen={closeModalOpen}
+        onClose={() => setCloseModalOpen(false)}
+        onConfirm={handleConfirmClose}
+      />
 
       {/* --- FILTER BAR --- */}
       <div className="bg-white p-4 rounded-2xl border border-health-border shadow-sm grid grid-cols-1 md:grid-cols-4 gap-4">

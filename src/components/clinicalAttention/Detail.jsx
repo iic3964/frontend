@@ -308,7 +308,8 @@ export default function ClinicalAttentionDetail({ attentionId }) {
           <div className="flex gap-3">
             <button
               onClick={() => setShowEditModal(true)}
-              className="rounded-lg bg-health-accent text-white px-4 py-2 text-sm font-medium hover:bg-health-accent-dark transition shadow-lg flex items-center gap-2 cursor-pointer"
+              disabled={ca.is_closed}
+              className="rounded-lg bg-health-accent text-white px-4 py-2 text-sm font-medium hover:bg-health-accent-dark transition shadow-lg flex items-center gap-2 cursor-pointer disabled:opacity-50 disabled:cursor-not-allowed"
             >
               Editar
             </button>
@@ -538,9 +539,9 @@ export default function ClinicalAttentionDetail({ attentionId }) {
                   }`}
                 >
                   {ca.ai_result === true
-                    ? "Aprobado"
+                    ? "Aplica"
                     : ca.ai_result === false
-                    ? "Rechazado"
+                    ? "No Aplica"
                     : "Pendiente"}
                 </span>
               )}

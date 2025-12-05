@@ -1,5 +1,7 @@
 import { useEffect, useState } from "react";
 import { apiClient } from "../../modules/api";
+import SearchableSelect from "../UI/SearchableSelect";
+import PatientModal from "./PatientModal";
 
 export default function SendForm() {
   const [patientId, setPatientId] = useState("");
@@ -17,6 +19,10 @@ export default function SendForm() {
   const [patients, setPatients] = useState([]);
   const [patientsLoading, setPatientsLoading] = useState(false);
   const [patientsError, setPatientsError] = useState(null);
+
+  // Patient modal state
+  const [showPatientModal, setShowPatientModal] = useState(false);
+  const [editingPatient, setEditingPatient] = useState(null);
 
   // Clinical fields
   const [anamnesis, setAnamnesis] = useState("");
@@ -87,27 +93,6 @@ export default function SendForm() {
         );
       } finally {
         if (mounted) setMedicsLoading(false);
-      }
-    };
-
-    const loadPatients = async () => {
-      setPatientsLoading(true);
-      setPatientsError(null);
-      try {
-        const resp = await apiClient.getPatients();
-        if (!mounted) return;
-        if (resp.success && resp.data && Array.isArray(resp.data.patients)) {
-          setPatients(resp.data.patients);
-        } else {
-          setPatientsError(resp.error || "Failed to load patients");
-        }
-      } catch (err) {
-        if (!mounted) return;
-        setPatientsError(
-          err instanceof Error ? err.message : "Error loading patients"
-        );
-      } finally {
-        if (mounted) setPatientsLoading(false);
       }
     };
 
@@ -187,6 +172,37 @@ ${triage}
 
   const areVitalsFilled = Object.values(vitales).every(v => v !== "" && v !== null);
 
+  const handlePatientSuccess = (newPatient) => {
+    // Reload patients list
+    loadPatients();
+    // Select the new/updated patient
+    setPatientId(newPatient.id);
+  };
+
+  const handleOpenPatientModal = (patient = null) => {
+    setEditingPatient(patient);
+    setShowPatientModal(true);
+  };
+
+  const loadPatients = async () => {
+    setPatientsLoading(true);
+    setPatientsError(null);
+    try {
+      const resp = await apiClient.getPatients({ page: 1, page_size: 1000000000 });
+      if (resp.success && resp.data && Array.isArray(resp.data.results)) {
+        setPatients(resp.data.results);
+      } else {
+        setPatientsError(resp.error || "Failed to load patients");
+      }
+    } catch (err) {
+      setPatientsError(
+        err instanceof Error ? err.message : "Error loading patients"
+      );
+    } finally {
+      setPatientsLoading(false);
+    }
+  };
+
 const isFormValid =
   patientId &&
   residentDoctorId &&
@@ -199,101 +215,113 @@ const isFormValid =
 
 
   return (
-    <form onSubmit={handleSubmit} className="space-y-5">
-      <div className="flex flex-col gap-2">
-        <label className="text-sm text-health-text-muted">
-          ID Episodio (opcional)
-        </label>
-        <input
-          type="text"
-          value={idEpisodio}
-          onChange={(e) => setIdEpisodio(e.target.value)}
-          placeholder=""
-          className="rounded-lg bg-white border border-health-border px-3 py-2 text-health-text"
-        />
-      </div>
+    <>
+      {/* Patient Modal - Outside form to prevent nested form submission */}
+      <PatientModal
+        isOpen={showPatientModal}
+        onClose={() => setShowPatientModal(false)}
+        onSuccess={handlePatientSuccess}
+        existingPatient={editingPatient}
+      />
+
+      <form onSubmit={handleSubmit} className="space-y-5">
+        <div className="flex flex-col gap-2">
+          <label className="text-sm text-health-text-muted">
+            ID Episodio (opcional)
+          </label>
+          <input
+            type="text"
+            value={idEpisodio}
+            onChange={(e) => setIdEpisodio(e.target.value)}
+            placeholder=""
+            className="rounded-lg bg-white border border-health-border px-3 py-2 text-health-text"
+          />
+        </div>
 
       {/* IDs */}
       <div className="grid gap-4 grid-cols-1 md:grid-cols-3">
         {/* Patient */}
         <div className="flex flex-col gap-2">
-          <label className="text-sm text-health-text-muted">Paciente *</label>
-          <select
+          <div className="flex items-center justify-between">
+            <label className="text-sm text-health-text-muted">Paciente *</label>
+            <div className="flex gap-2">
+              <button
+                type="button"
+                onClick={() => handleOpenPatientModal()}
+                className="text-xs text-health-accent hover:text-health-accent-dark font-medium flex items-center gap-1"
+                title="Crear nuevo paciente"
+              >
+                <svg className="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                  <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M12 4v16m8-8H4" />
+                </svg>
+                Nuevo
+              </button>
+              {patientId && (
+                <button
+                  type="button"
+                  onClick={() => {
+                    const patient = patients.find(p => p.id === patientId);
+                    handleOpenPatientModal(patient);
+                  }}
+                  className="text-xs text-blue-600 hover:text-blue-700 font-medium flex items-center gap-1"
+                  title="Editar paciente seleccionado"
+                >
+                  <svg className="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                    <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M11 5H6a2 2 0 00-2 2v11a2 2 0 002 2h11a2 2 0 002-2v-5m-1.414-9.414a2 2 0 112.828 2.828L11.828 15H9v-2.828l8.586-8.586z" />
+                  </svg>
+                  Editar
+                </button>
+              )}
+            </div>
+          </div>
+          <SearchableSelect
             value={patientId}
-            onChange={(e) => setPatientId(e.target.value)}
-            className="rounded-lg bg-white border border-health-border px-3 py-2 text-health-text h-10"
+            onChange={setPatientId}
+            options={patients.map((p) => ({
+              value: p.id,
+              label: `${p.rut ? `${p.rut} — ` : ""}${p.first_name} ${p.last_name}`,
+            }))}
+            placeholder={patientsLoading ? "Cargando pacientes..." : "Selecciona un paciente"}
             required
             disabled={patientsLoading}
-          >
-            <option value="">
-              {patientsLoading
-                ? "Cargando pacientes..."
-                : "Selecciona un paciente"}
-            </option>
-            {patients.map((p) => (
-              <option key={p.id} value={p.id}>
-                {`${p.rut ? `${p.rut} — ` : ""}${p.first_name} ${p.last_name}`}
-              </option>
-            ))}
-          </select>
+          />
         </div>
 
         {/* Resident - Updated logic */}
         <div className="flex flex-col gap-2">
-          <label className="text-sm text-health-text-muted">
-            Médico Residente *
-          </label>
-          <select
+          <SearchableSelect
+            label="Médico Residente"
             value={residentDoctorId}
-            onChange={(e) => setResidentDoctorId(e.target.value)}
-            className={`rounded-lg bg-white border border-health-border px-3 py-2 text-health-text h-10 ${
-              isResidentLocked
-                ? "bg-gray-100 opacity-70 cursor-not-allowed"
-                : ""
-            }`}
+            onChange={setResidentDoctorId}
+            options={medics.resident.map((d) => ({
+              value: d.id,
+              label: `${d.first_name} ${d.last_name}`,
+            })).concat(
+              medics.supervisor.map((d) => ({
+                value: d.id,
+                label: `${d.first_name} ${d.last_name} (Jefe de Turno)`,
+              }))
+            )}
+            placeholder={medicsLoading ? "Cargando médicos..." : "Selecciona un residente"}
             required
-            disabled={medicsLoading || isResidentLocked} // Locked if session matches
-          >
-            <option value="">
-              {medicsLoading
-                ? "Cargando médicos..."
-                : "Selecciona un residente"}
-            </option>
-            {medics.resident.map((d) => (
-              <option key={d.id} value={d.id}>
-                {`${d.first_name} ${d.last_name}`}
-              </option>
-            ))}
-          </select>
+            disabled={medicsLoading || isResidentLocked}
+          />
         </div>
 
         {/* Supervisor - Updated logic */}
         <div className="flex flex-col gap-2">
-          <label className="text-sm text-health-text-muted">
-            Jefe de Turno *
-          </label>
-          <select
+          <SearchableSelect
+            label="Jefe de Turno"
             value={supervisorDoctorId}
-            onChange={(e) => setSupervisorDoctorId(e.target.value)}
-            className={`rounded-lg bg-white border border-health-border px-3 py-2 text-health-text h-10 ${
-              isSupervisorLocked
-                ? "bg-gray-100 opacity-70 cursor-not-allowed"
-                : ""
-            }`}
+            onChange={setSupervisorDoctorId}
+            options={medics.supervisor.map((d) => ({
+              value: d.id,
+              label: `${d.first_name} ${d.last_name}`,
+            }))}
+            placeholder={medicsLoading ? "Cargando médicos..." : "Selecciona un supervisor"}
             required
-            disabled={medicsLoading || isSupervisorLocked} // Locked if session matches
-          >
-            <option value="">
-              {medicsLoading
-                ? "Cargando médicos..."
-                : "Selecciona un supervisor"}
-            </option>
-            {medics.supervisor.map((d) => (
-              <option key={d.id} value={d.id}>
-                {`${d.first_name} ${d.last_name}`}
-              </option>
-            ))}
-          </select>
+            disabled={medicsLoading || isSupervisorLocked}
+          />
         </div>
       </div>
 
@@ -373,7 +401,7 @@ const isFormValid =
             ["glicemia_capilar", "Glicemia Capilar"],
           ].map(([field, label]) => (
             <div key={field} className="flex flex-col gap-1">
-              <label className="text-xs text-health-text-muted">{label}</label>
+              <label className="text-xs text-health-text-muted">{label} *</label>
               <input
                 type="number"
                 value={vitales[field]}
@@ -437,5 +465,6 @@ const isFormValid =
         {loading ? "Creando..." : "Crear Atención Clínica"}
       </button>
     </form>
+    </>
   );
 }

@@ -107,6 +107,14 @@ export type ClinicalAttention = {
   ai_reason: string | null;
   ai_confidence?: number | null;
   diagnostic: string | null;
+  is_closed?: boolean | null;
+  closed_at?: string | null;
+  closed_by?: Doctor | null;
+  closing_reason?: string | null;
+  pertinencia?: boolean | null;
+  supervisor_approved?: boolean | null;
+  supervisor_observation?: string | null;
+  triage?: string | null;
 };
 
 export type CreateClinicalAttentionRequest = {

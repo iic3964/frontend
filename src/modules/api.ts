@@ -210,6 +210,7 @@ class ApiClient {
     doctor_search?: string;
     medic_approved?: string;
     supervisor_approved?: string;
+    current_user_id?: string;
   }): Promise<ApiResponse<PaginatedResponse<ClinicalAttention>>> {
     const queryParams = new URLSearchParams();
     if (params?.page) queryParams.append("page", params.page.toString());
@@ -218,6 +219,7 @@ class ApiClient {
     if (params?.doctor_search) queryParams.append("doctor_search", params.doctor_search);
     if (params?.medic_approved) queryParams.append("medic_approved", params.medic_approved);
     if (params?.supervisor_approved) queryParams.append("supervisor_approved", params.supervisor_approved);
+    if (params?.current_user_id) queryParams.append("current_user_id", params.current_user_id);
 
     const url = `/clinical_attentions${queryParams.toString() ? `?${queryParams.toString()}` : ""}`;
     return this.request<PaginatedResponse<ClinicalAttention>>(url);
@@ -271,6 +273,33 @@ class ApiClient {
       method: "DELETE",
       body: JSON.stringify({ deleted_by_id }),
     });
+  }
+
+  async closeEpisode(
+    id: string,
+    closed_by_id: string,
+    closing_reason: string
+  ): Promise<ApiResponse<{ success: boolean; message: string }>> {
+    return this.request<{ success: boolean; message: string }>(
+      `/clinical_attentions/${id}/close`,
+      {
+        method: "POST",
+        body: JSON.stringify({ closed_by_id, closing_reason }),
+      }
+    );
+  }
+
+  async reopenEpisode(
+    id: string,
+    reopened_by_id: string
+  ): Promise<ApiResponse<{ success: boolean; message: string }>> {
+    return this.request<{ success: boolean; message: string }>(
+      `/clinical_attentions/${id}/reopen`,
+      {
+        method: "POST",
+        body: JSON.stringify({ reopened_by_id }),
+      }
+    );
   }
 
   async getClinicalAttentionHistory(

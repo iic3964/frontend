@@ -15,6 +15,9 @@ export default function SupervisorActionCard({
   // LOGIC: Visible to Supervisor and Admin.
   if (userRole !== "supervisor" && userRole !== "admin") return null;
 
+  // Check if episode is closed
+  const isClosed = clinicalAttention.is_closed === true;
+
   const status = clinicalAttention.supervisor_approved; // true (ratified), false (objected), null (no action)
   const observation = clinicalAttention.supervisor_observation;
 
@@ -122,40 +125,52 @@ export default function SupervisorActionCard({
         </div>
         
         {/* Actions for Supervisor */}
-        <div className="flex gap-2">
-           {/* Botón Ratificar: Siempre visible para permitir cambiar decisión o editar */}
-           <button
-            onClick={() => { 
-              setActionType("ratify"); 
-              setReason(status === true ? (observation || "") : ""); 
-              setIsEditing(true); 
-            }}
-            className="text-xs font-medium bg-purple-600 text-white hover:bg-purple-700 px-3 py-1.5 rounded-lg border border-transparent hover:border-purple-100 transition cursor-pointer"
-          >
-            {status === true 
-              ? "Editar Ratificación" 
-              : status === false 
-                ? "Cambiar a Ratificar" 
-                : "Ratificar (Opcional)"}
-          </button>
-           
-           {/* Botón Objetar: Siempre visible para permitir cambiar decisión o editar */}
-           <button
-             onClick={() => { 
-               setActionType("reject"); 
-               setReason(status === false ? (observation || "") : ""); 
-               setIsEditing(true); 
-             }}
-             className="text-xs font-medium bg-red-600 text-white hover:bg-red-700 px-3 py-1.5 rounded-lg border border-red-100 hover:border-red-200 transition cursor-pointer"
-           >
-             {status === false 
-               ? "Editar Objeción" 
-               : status === true 
-                 ? "Cambiar a Objetar" 
-                 : "Objetar Caso"}
-           </button>
-        </div>
+        {!isClosed && (
+          <div className="flex gap-2">
+             {/* Botón Ratificar: Siempre visible para permitir cambiar decisión o editar */}
+             <button
+              onClick={() => {
+                setActionType("ratify");
+                setReason(status === true ? (observation || "") : "");
+                setIsEditing(true);
+              }}
+              className="text-xs font-medium bg-purple-600 text-white hover:bg-purple-700 px-3 py-1.5 rounded-lg border border-transparent hover:border-purple-100 transition cursor-pointer"
+            >
+              {status === true
+                ? "Editar Ratificación"
+                : status === false
+                  ? "Cambiar a Ratificar"
+                  : "Ratificar (Opcional)"}
+            </button>
+
+             {/* Botón Objetar: Siempre visible para permitir cambiar decisión o editar */}
+             <button
+               onClick={() => {
+                 setActionType("reject");
+                 setReason(status === false ? (observation || "") : "");
+                 setIsEditing(true);
+               }}
+               className="text-xs font-medium bg-red-600 text-white hover:bg-red-700 px-3 py-1.5 rounded-lg border border-red-100 hover:border-red-200 transition cursor-pointer"
+             >
+               {status === false
+                 ? "Editar Objeción"
+                 : status === true
+                   ? "Cambiar a Objetar"
+                   : "Objetar Caso"}
+             </button>
+          </div>
+        )}
       </div>
+
+      {/* Closed Episode Indicator */}
+      {isClosed && (
+        <div className="mb-4 p-3 bg-gray-100 text-gray-700 text-sm rounded-lg border border-gray-200 flex items-center gap-2">
+          <svg xmlns="http://www.w3.org/2000/svg" className="h-5 w-5" viewBox="0 0 20 20" fill="currentColor">
+            <path fillRule="evenodd" d="M5 9V7a5 5 0 0110 0v2a2 2 0 012 2v5a2 2 0 01-2 2H5a2 2 0 01-2-2v-5a2 2 0 012-2zm8-2v2H7V7a3 3 0 016 0z" clipRule="evenodd" />
+          </svg>
+          <span className="font-medium">Episodio cerrado - No se pueden realizar cambios</span>
+        </div>
+      )}
 
       {/* Estado Actual */}
       <div className="mt-4 pt-4 border-t border-gray-100">

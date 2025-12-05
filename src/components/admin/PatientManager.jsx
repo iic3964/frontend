@@ -251,6 +251,14 @@ const PatientManager = () => {
 
         <div className="flex gap-3">
           {view === "list" && (
+              <a
+                href="/send"
+                class="rounded-lg bg-health-secondary text-white py-2 px-4 font-medium text-center transition hover:bg-health-secondary-dark shadow-md"
+              >
+                Crear Episodio Clinico
+              </a>
+          )}
+          {view === "list" && (
             <button
               onClick={handleCreateClick}
               className="bg-health-accent text-white px-4 py-2 rounded-lg hover:bg-health-accent-dark transition cursor-pointer"
