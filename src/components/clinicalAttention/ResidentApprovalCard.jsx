@@ -12,6 +12,9 @@ export default function ResidentApprovalCard({
   // LOGIC: Visible to Residents and Admins. Hidden for Supervisors.
   if (userRole !== "resident" && userRole !== "admin") return null;
 
+  // Check if episode is closed
+  const isClosed = clinicalAttention.is_closed === true;
+
   // Extract status
   const isApproved = clinicalAttention.medic_approved === true;
   const isRejected = clinicalAttention.medic_approved === false;
@@ -70,20 +73,29 @@ export default function ResidentApprovalCard({
         </div>
       )}
 
+      {isClosed && (
+        <div className="mb-4 p-3 bg-gray-100 text-gray-700 text-sm rounded-lg border border-gray-200 flex items-center gap-2">
+          <svg xmlns="http://www.w3.org/2000/svg" className="h-5 w-5" viewBox="0 0 20 20" fill="currentColor">
+            <path fillRule="evenodd" d="M5 9V7a5 5 0 0110 0v2a2 2 0 012 2v5a2 2 0 01-2 2H5a2 2 0 01-2-2v-5a2 2 0 012-2zm8-2v2H7V7a3 3 0 016 0z" clipRule="evenodd" />
+          </svg>
+          <span className="font-medium">Episodio cerrado - No se pueden realizar cambios</span>
+        </div>
+      )}
+
       {isPending ? (
         <div className="flex gap-4">
           <button
             onClick={() => handleApproval(true)}
-            disabled={loading}
-            className="flex-1 bg-green-50 text-green-700 border border-green-200 py-2 px-4 rounded-lg hover:bg-green-100 font-medium transition disabled:opacity-50 cursor-pointer"
+            disabled={loading || isClosed}
+            className="flex-1 bg-green-50 text-green-700 border border-green-200 py-2 px-4 rounded-lg hover:bg-green-100 font-medium transition disabled:opacity-50 disabled:cursor-not-allowed cursor-pointer"
           >
             {loading ? "Procesando..." : "Aprobar resultado IA"}
           </button>
-          
+
           <button
             onClick={() => handleApproval(false)}
-            disabled={loading}
-            className="flex-1 bg-red-50 text-red-700 border border-red-200 py-2 px-4 rounded-lg hover:bg-red-100 font-medium transition disabled:opacity-50 cursor-pointer"
+            disabled={loading || isClosed}
+            className="flex-1 bg-red-50 text-red-700 border border-red-200 py-2 px-4 rounded-lg hover:bg-red-100 font-medium transition disabled:opacity-50 disabled:cursor-not-allowed cursor-pointer"
           >
             {loading ? "Procesando..." : "Rechazar resultado IA"}
           </button>
