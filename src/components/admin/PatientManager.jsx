@@ -255,7 +255,7 @@ const PatientManager = () => {
                 href="/send"
                 class="rounded-lg bg-health-secondary text-white py-2 px-4 font-medium text-center transition hover:bg-health-secondary-dark shadow-md"
               >
-                Crear Episodio Clinico
+                Crear Episodio Clínico
               </a>
           )}
           {view === "list" && (
